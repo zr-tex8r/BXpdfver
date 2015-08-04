@@ -1,81 +1,83 @@
-BXpdfver パッケージバンドル
-===========================
+BXpdfver Package
+================
 
-LaTeX: 出力 PDF のバージョンや圧縮状態を指定する
+LaTeX: To specify the version and compression level of output PDF files
 
-LaTeX 文書を PDF 文書に変換する際に出力 PDF に関する以下の設定を文書中で
-行う機能を提供する。
+This package enables users to specify in their sources the following
+settings on the PDF document to output:
 
-  * PDF バージョン（1.4, 1.5 等）
-  * ストリームの圧縮の有無
-  * オブジェクトストリームの使用の有無
+  * PDF version (1.4, 1.5 etc.);
+  * whether or not to compress streams;
+  * whether or not to use object streams.
 
-### 前提環境
+### SYSTEM REQUIREMENT
 
-  * フォーマット： LaTeX
-  * エンジン： 不問
-  * DVIウェア： dvipdfmx、および PDF 出力のエンジン
-  * 依存パッケージ：
-      - atbegshi（dvipdfmx ドライバの場合）
+  * TeX format: LaTeX.
+  * TeX engine: pdfTeX, XeTeX, LuaTeX, and any DVI-output engines.
+  * DVI-ware: dvipdfmx.
+  * Required packages:
+      - atbegshi (when using dvipdfmx driver)
 
-### インストール
+### INSTALLATION
 
   - `*.sty` → $TEXMF/tex/latex/BXpdfver
 
+### LICENSE
 
-bxpdfver パッケージ
--------------------
+This package is distributed under the MIT license.
 
-### パッケージ読込
+bxpdfver package
+----------------
 
-    \usepackage[<オプション>,...]{bxpdfver}
+### PACKAGE LOADING
 
-利用可能なオプションは以下の通り。
+    \usepackage[<option>,...]{bxpdfver}
 
-  * `1.4`、`1.5`、`1.6`、`1.7`： PDF バージョンを指定する。
-  * `nocompress`： ストリームの圧縮を抑止する。
-  * `compress`（既定）： ストリームの圧縮を抑止しない。
-  * `noobjcompress`： オブジェクトストリームの使用を抑止する。
-  * `objcompress`（既定）： オブジェクトストリームの使用を抑止しない。
-  * ドライバオプション： 以下の通り。なお、後述の「ドライバ指定」の
-    節も参照されたい。
-      + PDF 出力のエンジンの場合は、既定で適切なドライバが選択される
-        のでドライバオプションは不要である。
-      + `dvipdfmx`： dvipdfmx 用のドライバを指定する。
-      + `disabled`： 全ての機能を無効化する。
+The available options are:
 
-`compress`、`objcompress` はこのパッケージによる抑止を行わないという意味
-であり、既に抑止されている場合にそれを再び有効化するものではない。
+  * `1.4`, `1.5`, `1.6`, or `1.7`: Sets PDF version.
+  * `nocompress`: Suppresses stream compression.
+  * `compress` (defalt): Does not suppress stream compression.
+  * `noobjcompress`: Suppresses use of object streams.
+  * `objcompress` (default): Does not suppress use of object streams.
+  * Driver options: As below:
+      + When using a PDF-output engine, you need not give driver options
+        since the appropriate one is auto-detected.
+      + `dvipdfmx`: Uses dvipdfmx driver.
+      + `disabled`: Disables all functions of the package.
 
-### ドライバ指定
+Note that the options `compress` and `objcompress` mean that this
+package *does not suppress* a feature. They do not active a feature
+when it is already suppressed by other means.
 
-  * pdfTeX（LuaTeX）では全ての機能が使用可能。
-  * XeTeX および dvipdfmx では PDF バージョン指定のみ使用可能。
-  * 使用不可能な機能を使おうと試みるとエラーが発生する。
-  * `dvips` 等の“全く対応していない”若干のドライバオプションを認識
-    する。この場合、全ての機能の呼出でエラーが発生する。
-  * `disabled` は特殊で、これを指定した場合は、どの機能の呼出でも
-    エラーは発生しないが、全く何の動作も行わない。
+### NOTE ON DRIVERS
 
-### 機能
+  * pdfTeX and LuaTeX support all features.
+  * XeTeX and dvipdfmx support only PDF version setting.
+  * If you try to use unavailable features, an error will occur.
+  * The package recognizes some “unsupported” driver options such as
+    `dvips`; when such drivers are used, use of any feature will cause
+    an error.
+  * When `disabled` is used, use of any feature will do nothing (nor
+    issue an error).
 
-  * `\setpdfversion{<バージョン>}`： 出力 PDF バージョンを指定する。
-    `<バージョン>` には以下の何れかを指定する。
-      + `1.4`、`1.5`、`1.6`、`1.7` の何れか。バージョンをその値に設定
-        する。
-      + PDF ファイルの名前。この場合、その PDF のバージョンと同じ値に
-        設定する。
-  * `\suppresspdfcompression`： ストリームの圧縮を抑止する。
-  * `\suppresspdfobjcompression`： オブジェクトストリームの使用を抑止
-    する。（実はこの指定自体は圧縮とは無関係であるが、pdfTeX エンジンの
-    プリミティブ `\pdfobjcompresslevel` に合わせた命令名を用いた。）
+### COMMANDS
 
+  * `\setpdfversion{<version>}`: Sets PDF version.
+    Here `<version>` is either one of the following:
+      + `1.4`, `1.5`, `1.6`, or `1.7`; the version itself.
+      + the name of a PDF file; the version is set equal to that of
+        the given file.
+  * `\suppresspdfcompression`: Suppresses use of object streams.
+  * `\suppresspdfobjcompression`: Suppresses use of object streams.
 
-更新履歴
---------
+REVISION HISTORY
+----------------
 
-  * Version 0.2 <2014/07/04>
-      - 最初の公開版。
+  * Version 0.2a [2015/08/05]
+      - Minor fix.
+  * Version 0.2  [2014/07/04]
+      - First public version.
 
 --------------------
 Takayuki YATO (aka. "ZR")  

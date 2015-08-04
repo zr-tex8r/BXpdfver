@@ -2,7 +2,7 @@
 
 %% package declaration
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{bxpdfver}[2014/07/04 v0.2]
+\ProvidesPackage{bxpdfver}[2015/08/05 v0.2a]
 
 %% preparations
 \def\bxpv@pkgname{bxpdfver}
@@ -12,7 +12,7 @@
 %% variables
 \newif\ifbxpv@ok
 \let\bxpv@drv@type\relax
-\let\bxpv@drv@naem\relax
+\let\bxpv@drv@name\relax
 \let\bxpv@version\relax
 \let\bxpv@mversion\relax
 \let\bxpv@compress=t
@@ -86,17 +86,26 @@
 %% \bxpv@suppress@compress
 \@onlypreamble\bxpv@suppress@compress
 \def\bxpv@suppress@compress{%
-  \bxpv@error{Cannot suppress compression}\@ehc
+  \bxpv@error{Cannot suppress compression}%
+  \bxpv@errh@na
 }
 %% \bxpv@suppress@obj@compress
 \@onlypreamble\bxpv@suppress@obj@compress
 \def\bxpv@suppress@obj@compress{%
-  \bxpv@error{Cannot suppress object compression}\@ehc
+  \bxpv@error{Cannot suppress object compression}%
+  \bxpv@errh@na
 }
 %% \bxpv@set@version
 \@onlypreamble\bxpv@set@version
 \def\bxpv@set@version{%
-  \bxpv@error{Cannot set PDF version}\@ehc
+  \bxpv@error{Cannot set PDF version}%
+  \bxpv@errh@na
+}
+%% \bxpv@errh@na
+\@onlypreamble\bxpv@errh@na
+\def\bxpv@errh@na{%
+  This feature is not supported by the engine in use.%
+  \MessageBreak\@ehc
 }
 
 \begingroup
@@ -111,19 +120,25 @@
   \fi
 }
 
-%% \pdfoutput hack
+%% \bxpv@pdfoutput: use PDF output?
 \ifx\pdfoutput\@undefined
   \chardef\bxpv@pdfoutput\z@
+  % XeTeX might support \pdfminorversion etc in the future :)
   \bxpv@check@prim\XeTeXversion{\chardef\bxpv@pdfoutput\@ne}%
+  % pTeX-ng
+  \bxpv@check@prim\ngbanner{\chardef\bxpv@pdfoutput\@ne}%
 \else
   \chardef\bxpv@pdfoutput\pdfoutput
 \fi
 
+%% adjust internal dispatchers
 \bxpv@okfalse
-\ifnum\bxpv@pdfoutput>\z@
+\ifnum\bxpv@pdfoutput>\z@ % PDF-output
   \global\let\bxpv@drv@type=p
+  % \bxpv@isupp@obj@compress: auto-supress of obj-compression
   \@onlypreamble\bxpv@isupp@obj@compress
   \global\let\bxpv@isupp@obj@compress\relax
+  % \bxpv@iunsupp@obj@compress: un-auto-supress
   \@onlypreamble\bxpv@iunsupp@obj@compress
   \global\let\bxpv@iunsupp@obj@compress\relax
   %% If \pdfcompresslevel is available, use it.
@@ -163,21 +178,25 @@
     \fi
   }%
 \else
+  % XeTeX now does not have \pdfminorversion,
+  % so do it just as dvipdfmx.
   \bxpv@check@prim\XeTeXversion{%
     \global\let\bxpv@drv@type=d%
   }
 \fi
 
-\if x\bxpv@drv@type
+%% driver check
+\if x\bxpv@drv@type % 'bad' driver
   \bxpv@error{Unsupported driver '\bxpv@drv@name'}\@ehc
+  % no further errors
   \let\bxpv@drv@type=0\relax
 \fi
-\if d\bxpv@drv@type
+\if d\bxpv@drv@type % 'dvipdfmx'
   \global\let\bxpv@set@version\relax
   \AtBeginDocument{%
     \bxpv@set@version@dvipdfmx
   }
-\else\if 0\bxpv@drv@type
+\else\if 0\bxpv@drv@type % 'disabled'
   \global\let\bxpv@set@version\relax
   \global\let\bxpv@suppress@compress\relax
   \global\let\bxpv@suppress@obj@compress\relax
@@ -210,6 +229,7 @@
 %--------------------------------------- version values
 
 %% \bxpv@get@mversion
+% Sets \bxpv@mversion.
 % Note: \bxpv@version is assumed to be already expnaded.
 \@onlypreamble\bxpv@get@mversion
 \def\bxpv@get@mversion{%
@@ -301,8 +321,8 @@
   \expandafter\bxpv@tmpa\bxpv@tmpb\bxpv@end
 \endgroup
 
-%--------------------------------------- dvipdfmx
-\ifx d\bxpv@drv@type
+%--------------------------------------- dvipdfmx something
+\ifx d\bxpv@drv@type % 'dvipdfmx'
 
 %% required packages
 \RequirePackage{atbegshi}[2009/07/70]
@@ -338,10 +358,11 @@
 }
 \ifx p\bxpv@drv@type
   \AtBeginDocument{%
+    \def\do#1{\ifx#1\@undefined\else\the#1\fi}%
     \typeout{%
-      pdfminorversion=\the\pdfminorversion^^J%
-      pdfcompresslevel=\the\pdfcompresslevel^^J%
-      pdfobjcompresslevel=\the\pdfobjcompresslevel^^J%
+      pdfminorversion=\do\pdfminorversion^^J%
+      pdfcompresslevel=\do\pdfcompresslevel^^J%
+      pdfobjcompresslevel=\do\pdfobjcompresslevel^^J%
     }%
   }
 \fi
