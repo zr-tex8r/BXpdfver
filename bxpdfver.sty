@@ -6,9 +6,8 @@
 \def\bxpv@pkgname{bxpdfver}
 
 %% preparations
-\def\bxpv@error{\PackageError\bxpv@pkgname}
-\def\bxpv@info{\PackageInfo\bxpv@pkgname}
 \newif\ifbxpv@ok
+\providecommand\bxDebug[1]{}
 
 %--------------------------------------- package options
 
@@ -20,6 +19,7 @@
 \let\bxpv@mversion\relax  % minor version (eg. 4)
 \let\bxpv@compress=t      % use compression?
 \let\bxpv@obj@compress=t  % use object stream?
+\chardef\bxpv@infolevel=2 % info-log level
 
 %% options
 % (PDF version)
@@ -75,6 +75,10 @@
   \let\bxpv@drv@type=0%
   \def\bxpv@drv@name{disabled}%
 }
+% (other)
+\DeclareOption{lenient}{%
+  \chardef\bxpv@infolevel=1
+}
 
 %% process
 \ProcessOptions*
@@ -85,31 +89,41 @@
 \def\bxpv@end{\bxpv@end@}
 \def\bxpv@mt{\bxpv@mt@}
 
+%% \bxpv@csletcs
+\def\bxpv@csletcs#1#2{%
+  \expandafter\let\csname#1\expandafter\endcsname\csname#2\endcsname
+}
+
+%% \bxpv@fail{<message>}
+% Issues an error or a warning.
+\@onlypreamble\bxpv@fail
+\def\bxpv@fail#1{%
+  \ifcase\bxpv@infolevel % silenced
+  \or % lenient
+    \PackageWarningNoLine\bxpv@pkgname{#1}%
+  \or % strict
+    \PackageError\bxpv@pkgname{#1}%
+     {This feature is not supported by the engine in use.%
+      \MessageBreak\@ehc}%
+  \fi
+}
+
 %--------------------------------------- internal dispatchers
 
 %% \bxpv@suppress@compress
 \@onlypreamble\bxpv@suppress@compress
 \def\bxpv@suppress@compress{%
-  \bxpv@error{Cannot suppress compression}%
-  \bxpv@errh@na
+  \bxpv@fail{Cannot suppress compression}%
 }
 %% \bxpv@suppress@obj@compress
 \@onlypreamble\bxpv@suppress@obj@compress
 \def\bxpv@suppress@obj@compress{%
-  \bxpv@error{Cannot suppress object compression}%
-  \bxpv@errh@na
+  \bxpv@fail{Cannot suppress object compression}%
 }
 %% \bxpv@set@version
 \@onlypreamble\bxpv@set@version
 \def\bxpv@set@version{%
-  \bxpv@error{Cannot set PDF version}%
-  \bxpv@errh@na
-}
-%% \bxpv@errh@na
-\@onlypreamble\bxpv@errh@na
-\def\bxpv@errh@na{%
-  This feature is not supported by the engine in use.%
-  \MessageBreak\@ehc
+  \bxpv@fail{Cannot set PDF version}%
 }
 
 %% adjust internal dispatchers
@@ -191,7 +205,7 @@
 
 %% when in DVI mode
 \if x\bxpv@drv@type % 'bad' driver
-  \bxpv@error{Unsupported driver '\bxpv@drv@name'}\@ehc
+  \bxpv@fail{Unsupported driver '\bxpv@drv@name'}%
   % no further errors
   \let\bxpv@drv@type=0\relax
 \fi
@@ -249,13 +263,15 @@
       \bxpv@file@mversion
     \fi
     \ifx\bxpv@mversion\relax
-      \bxpv@error{Invalid value given for PDF version\MessageBreak
+      \PackageError\bxpv@pkgname
+       {Invalid value given for PDF version\MessageBreak
         (value=\bxpv@version)}{%
         PDF version must be either 1.4, 1.5, ..., 1.9, or\MessageBreak
         or the name of a PDF file from which the version is pulled.%
         \MessageBreak\@ehc}%
     \else
-      \bxpv@info{Output PDF version is set to 1.\the\bxpv@mversion
+      \PackageInfo\bxpv@pkgname
+       {Output PDF version is set to 1.\the\bxpv@mversion
         \MessageBreak}%
     \fi
   \fi
