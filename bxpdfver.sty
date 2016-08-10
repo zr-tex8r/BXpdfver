@@ -71,6 +71,10 @@
   \let\bxpv@drv@type=x%
   \def\bxpv@drv@name{dviout}%
 }
+\DeclareOption{xdvi}{%
+  \let\bxpv@drv@type=x%
+  \def\bxpv@drv@name{xdvi}%
+}
 \DeclareOption{disabled}{%
   \let\bxpv@drv@type=0%
   \def\bxpv@drv@name{disabled}%
@@ -125,8 +129,19 @@
 \def\bxpv@set@version{%
   \bxpv@fail{Cannot set PDF version}%
 }
+%% \bxpv@cancel@obj@compress
+% The silent version of \bxpv@suppress@obj@compress.
+\@onlypreamble\bxpv@cancel@obj@compress
+\let\bxpv@cancel@obj@compress\relax
+
+%% \bxpv@begin@document@hook
+% The begin-document hook.
+\@onlypreamble\bxpv@begin@document@hook
+\let\bxpv@begin@document@hook\@empty
+\AtBeginDocument{\bxpv@begin@document@hook}
 
 %% adjust internal dispatchers
+\ifx 0\bxpv@drv@type\else               %--------
 \begingroup
 
 %% \bxpv@check@prim\CS{<proc>}
@@ -140,62 +155,52 @@
 }
 
 %% \bxpv@pdfoutput
-\ifx\pdfoutput\@undefined
-  \chardef\bxpv@pdfoutput\z@
-  % XeTeX might support \pdfminorversion etc in the future :)
-  \bxpv@check@prim\XeTeXversion{\chardef\bxpv@pdfoutput\@ne}%
-  % pTeX-ng
-  \bxpv@check@prim\ngbanner{\chardef\bxpv@pdfoutput\@ne}%
-\else
-  \chardef\bxpv@pdfoutput\pdfoutput
-\fi
+\chardef\bxpv@pdfoutput\z@
+\bxpv@check@prim\pdfoutput{\chardef\bxpv@pdfoutput\pdfoutput}
+\bxpv@check@prim\outputmode{\chardef\bxpv@pdfoutput\outputmode}
+\bxpv@check@prim\ngbanner{\chardef\bxpv@pdfoutput\@ne}
 
 %% when in PDF mode
-\bxpv@okfalse
 \ifnum\bxpv@pdfoutput>\z@
   \global\let\bxpv@drv@type=p
-  % \bxpv@isupp@obj@compress: auto-supress of obj-compression
-  \@onlypreamble\bxpv@isupp@obj@compress
-  \global\let\bxpv@isupp@obj@compress\relax
-  % \bxpv@iunsupp@obj@compress: un-auto-supress
-  \@onlypreamble\bxpv@iunsupp@obj@compress
-  \global\let\bxpv@iunsupp@obj@compress\relax
-  % If \pdfcompresslevel is available, use it.
-  \bxpv@check@prim\pdfcompresslevel{%
-    \gdef\bxpv@suppress@compress{%
-      \global\pdfcompresslevel\z@
-    }%
-  }
-  % If \pdfobjcompresslevel is available, use it.
-  \bxpv@check@prim\pdfobjcompresslevel{%
-    \global\chardef\bxpv@org@pdfobjcompresslevel\pdfobjcompresslevel
-    \gdef\bxpv@suppress@obj@compress{%
-      \global\pdfobjcompresslevel\z@
-      \global\let\bxpv@iunsupp@obj@compress\relax
-    }%
-    \gdef\bxpv@isupp@obj@compress{%
-      \global\pdfobjcompresslevel\z@
-    }%
-    \gdef\bxpv@iunsupp@obj@compress{%
-      \global\pdfobjcompresslevel\bxpv@org@pdfobjcompresslevel
-    }%
-  }
-  \bxpv@check@prim\pdfminorversion\bxpv@oktrue
-\fi
-\ifbxpv@ok % \pdfminorversion is available
-  \global\chardef\bxpv@org@pdfminorversion\pdfminorversion
-  \gdef\bxpv@set@version{%
-    \ifx\bxpv@mversion\relax
-      \global\pdfminorversion\bxpv@org@pdfminorversion
-    \else
-      \global\pdfminorversion\bxpv@mversion
-    \fi
-    \ifnum\pdfminorversion<5
-      \bxpv@isupp@obj@compress
-    \else
-      \bxpv@iunsupp@obj@compress
-    \fi
+  \global\let\bxpv@@compresslevel\pdfcompresslevel
+  \global\let\bxpv@@objcompresslevel\pdfobjcompresslevel
+  \global\let\bxpv@@minorversion\pdfminorversion
+  \bxpv@check@prim\pdfvariable{%
+    \protected\xdef\bxpv@@compresslevel{\pdfvariable compresslevel}%
+    \protected\xdef\bxpv@@objcompresslevel{\pdfvariable objcompresslevel}%
+    \protected\xdef\bxpv@@minorversion{\pdfvariable minorversion}%
   }%
+  % If \pdfcompresslevel is available, use it.
+  \ifx\bxpv@@compresslevel\@undefined\else
+    \gdef\bxpv@suppress@compress{%
+      \global\bxpv@@compresslevel\z@
+    }%
+  \fi
+  % If \pdfobjcompresslevel is available, use it.
+  \ifx\bxpv@@objcompresslevel\@undefined\else
+    \global\chardef\bxpv@org@objcompresslevel\bxpv@@objcompresslevel
+    \gdef\bxpv@suppress@obj@compress{%
+      \global\bxpv@@objcompresslevel\z@
+    }%
+    \global\let\bxpv@cancel@obj@compress\bxpv@suppress@obj@compress
+  \fi
+  % If \pdfminorversion is available, use it.
+  \ifx\bxpv@@minorversion\@undefined\else
+    \global\chardef\bxpv@org@minorversion\bxpv@@minorversion
+    \gdef\bxpv@set@version{%
+      \ifx\bxpv@mversion\relax
+        \global\bxpv@@minorversion\bxpv@org@minorversion
+      \else
+        \global\bxpv@@minorversion\bxpv@mversion
+      \fi
+    }%
+    \g@addto@macro\bxpv@begin@document@hook{%
+      \ifnum\bxpv@@minorversion<5
+        \bxpv@cancel@obj@compress
+      \fi
+    }%
+  \fi
 \else
   % XeTeX should do just as dvipdfmx.
   \bxpv@check@prim\XeTeXversion{%
@@ -207,20 +212,24 @@
 \if x\bxpv@drv@type % 'bad' driver
   \bxpv@fail{Unsupported driver '\bxpv@drv@name'}%
   % no further errors
-  \let\bxpv@drv@type=0\relax
-\fi
-\if d\bxpv@drv@type % 'dvipdfmx'
+  \global\chardef\bxpv@infolevel=0
+\else\if \relax\bxpv@drv@type % no driver
+  \PackageWarningNoLine\bxpv@pkgname
+   {No driver option is given}%
+  \global\chardef\bxpv@infolevel=0
+\else\if d\bxpv@drv@type % 'dvipdfmx'
+  %\global\let\bxpv@suppress@compress\relax
+  %\global\let\bxpv@suppress@obj@compress\relax
   \global\let\bxpv@set@version\relax
-  \AtBeginDocument{%
+  \g@addto@macro\bxpv@begin@document@hook{%
     \bxpv@set@version@dvipdfmx
   }
 \else\if 0\bxpv@drv@type % 'disabled'
-  \global\let\bxpv@set@version\relax
-  \global\let\bxpv@suppress@compress\relax
-  \global\let\bxpv@suppress@obj@compress\relax
-\fi\fi
+  \global\chardef\bxpv@infolevel=0
+\fi\fi\fi\fi
 
 \endgroup
+\fi                                     %--------
 
 %--------------------------------------- public interface
 
