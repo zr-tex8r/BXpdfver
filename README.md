@@ -37,7 +37,7 @@ The available options are:
 
   * `1.4`, `1.5`, `1.6`, or `1.7`: Sets PDF version.
   * `nocompress`: Suppresses stream compression.
-  * `compress` (defalt): Does not suppress stream compression.
+  * `compress` (default): Does not suppress stream compression.
   * `noobjcompress`: Suppresses use of object streams.
   * `objcompress` (default): Does not suppress use of object streams.
   * Driver options: As below:
@@ -45,9 +45,10 @@ The available options are:
         since the appropriate one is auto-detected.
       + `dvipdfmx`: Uses dvipdfmx driver.
       + `disabled`: Disables all functions of the package.
+  * `lenient`: Turns the errors for unsupported features into warnings.
 
 Note that the options `compress` and `objcompress` mean that this
-package *does not suppress* a feature. They do not active a feature
+package *does not suppress* a feature. They do not activate a feature
 when it is already suppressed by other means.
 
 ### NOTE ON DRIVERS
@@ -74,9 +75,12 @@ when it is already suppressed by other means.
 REVISION HISTORY
 ----------------
 
-  * Version 0.2a [2015/08/05]
+  * Version 0.2b ‹2016/08/10›
+      - Added the `lenient` option.
+      - Supported the newer version of LuaTeX.
+  * Version 0.2a ‹2015/08/05›
       - Minor fix.
-  * Version 0.2  [2014/07/04]
+  * Version 0.2  ‹2014/07/04›
       - First public version.
 
 --------------------
