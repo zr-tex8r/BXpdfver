@@ -3,22 +3,25 @@
 %% package declaration
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{bxpdfver}[2015/08/05 v0.2a]
+\def\bxpv@pkgname{bxpdfver}
 
 %% preparations
-\def\bxpv@pkgname{bxpdfver}
 \def\bxpv@error{\PackageError\bxpv@pkgname}
 \def\bxpv@info{\PackageInfo\bxpv@pkgname}
+\newif\ifbxpv@ok
+
+%--------------------------------------- package options
 
 %% variables
-\newif\ifbxpv@ok
-\let\bxpv@drv@type\relax
-\let\bxpv@drv@name\relax
-\let\bxpv@version\relax
-\let\bxpv@mversion\relax
-\let\bxpv@compress=t
-\let\bxpv@obj@compress=t
+\let\bxpv@drv@type\relax  % driver type
+   % p=pdfmode,d=dvipdfmx,0=disabled,x=unsupported
+\let\bxpv@drv@name\relax  % driver name
+\let\bxpv@version\relax   % version value (eg. 1.4)
+\let\bxpv@mversion\relax  % minor version (eg. 4)
+\let\bxpv@compress=t      % use compression?
+\let\bxpv@obj@compress=t  % use object stream?
 
-%% process options
+%% options
 % (PDF version)
 \DeclareOption{1.4}{%
   \edef\bxpv@version{\CurrentOption}%
@@ -72,7 +75,8 @@
   \let\bxpv@drv@type=0%
   \def\bxpv@drv@name{disabled}%
 }
-%
+
+%% process
 \ProcessOptions*
 
 %--------------------------------------- helpers
@@ -81,7 +85,7 @@
 \def\bxpv@end{\bxpv@end@}
 \def\bxpv@mt{\bxpv@mt@}
 
-%--------------------------------------- environment check
+%--------------------------------------- internal dispatchers
 
 %% \bxpv@suppress@compress
 \@onlypreamble\bxpv@suppress@compress
@@ -108,6 +112,7 @@
   \MessageBreak\@ehc
 }
 
+%% adjust internal dispatchers
 \begingroup
 
 %% \bxpv@check@prim\CS{<proc>}
@@ -120,7 +125,7 @@
   \fi
 }
 
-%% \bxpv@pdfoutput: use PDF output?
+%% \bxpv@pdfoutput
 \ifx\pdfoutput\@undefined
   \chardef\bxpv@pdfoutput\z@
   % XeTeX might support \pdfminorversion etc in the future :)
@@ -131,9 +136,9 @@
   \chardef\bxpv@pdfoutput\pdfoutput
 \fi
 
-%% adjust internal dispatchers
+%% when in PDF mode
 \bxpv@okfalse
-\ifnum\bxpv@pdfoutput>\z@ % PDF-output
+\ifnum\bxpv@pdfoutput>\z@
   \global\let\bxpv@drv@type=p
   % \bxpv@isupp@obj@compress: auto-supress of obj-compression
   \@onlypreamble\bxpv@isupp@obj@compress
@@ -141,13 +146,13 @@
   % \bxpv@iunsupp@obj@compress: un-auto-supress
   \@onlypreamble\bxpv@iunsupp@obj@compress
   \global\let\bxpv@iunsupp@obj@compress\relax
-  %% If \pdfcompresslevel is available, use it.
+  % If \pdfcompresslevel is available, use it.
   \bxpv@check@prim\pdfcompresslevel{%
     \gdef\bxpv@suppress@compress{%
       \global\pdfcompresslevel\z@
     }%
   }
-  %% If \pdfobjcompresslevel is available, use it.
+  % If \pdfobjcompresslevel is available, use it.
   \bxpv@check@prim\pdfobjcompresslevel{%
     \global\chardef\bxpv@org@pdfobjcompresslevel\pdfobjcompresslevel
     \gdef\bxpv@suppress@obj@compress{%
@@ -178,14 +183,13 @@
     \fi
   }%
 \else
-  % XeTeX now does not have \pdfminorversion,
-  % so do it just as dvipdfmx.
+  % XeTeX should do just as dvipdfmx.
   \bxpv@check@prim\XeTeXversion{%
     \global\let\bxpv@drv@type=d%
   }
 \fi
 
-%% driver check
+%% when in DVI mode
 \if x\bxpv@drv@type % 'bad' driver
   \bxpv@error{Unsupported driver '\bxpv@drv@name'}\@ehc
   % no further errors
