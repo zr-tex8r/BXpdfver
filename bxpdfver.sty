@@ -6,6 +6,7 @@
 \def\bxpv@pkgname{bxpdfver}
 
 %% preparations
+\RequirePackage{ifthen}[]% for \newboolean
 \newif\ifbxpv@ok
 \providecommand\bxDebug[1]{}
 
@@ -16,7 +17,6 @@
    % p=pdfmode,d=dvipdfmx,0=disabled,x=unsupported
 \let\bxpv@drv@name\relax  % driver name
 \let\bxpv@version\relax   % version value (eg. 1.4)
-\let\bxpv@mversion\relax  % minor version (eg. 4)
 \let\bxpv@compress=t      % use compression?
 \let\bxpv@obj@compress=t  % use object stream?
 \chardef\bxpv@infolevel=2 % info-log level
@@ -189,10 +189,10 @@
   \ifx\bxpv@@minorversion\@undefined\else
     \global\chardef\bxpv@org@minorversion\bxpv@@minorversion
     \gdef\bxpv@set@version{%
-      \ifx\bxpv@mversion\relax
+      \ifx\bxpdfverMinorVersion\relax
         \global\bxpv@@minorversion\bxpv@org@minorversion
       \else
-        \global\bxpv@@minorversion\bxpv@mversion
+        \global\bxpv@@minorversion\bxpdfverMinorVersion
       \fi
     }%
     \g@addto@macro\bxpv@begin@document@hook{%
@@ -237,12 +237,14 @@
 \@onlypreamble\suppresspdfcompression
 \newcommand*\suppresspdfcompression{%
   \bxpv@suppress@compress
+  \global\bxpdfverCompressionSuppressedtrue
 }
 
 %%<*> \suppresspdfobjcompression
 \@onlypreamble\suppresspdfobjcompression
 \newcommand*\suppresspdfobjcompression{%
   \bxpv@suppress@obj@compress
+  \global\bxpdfverObjCompressionSuppressedtrue
 }
 
 %%<*> \setpdfversion{<version>}
@@ -253,15 +255,34 @@
   \bxpv@set@version
 }
 
+%%<+> \ifbxpdfverCompressionSuppressed
+\newboolean{bxpdfverCompressionSuppressed}
+
+%%<+> \ifbxpdfverObjCompressionSuppressed
+\newboolean{bxpdfverObjCompressionSuppressed}
+
+%%<+> \bxpdfverMinorVersion
+% The PDF minor version (eg. '4' for 1.4) that this package
+% will impose. It is a number constant, or \relax.
+% (number constant or \relax)
+\@ifdefinable{\bxpdfverMinorVersion}{%
+  \let\bxpdfverMinorVersion\relax
+}
+
 %--------------------------------------- version values
 
+%% variables
+\let\bxpv@mversion\relax  % minor version (temporary)
+
 %% \bxpv@get@mversion
-% Sets \bxpv@mversion.
-% Note: \bxpv@version is assumed to be already expnaded.
+% Sets \bxpdfverMinorVersion.
 \@onlypreamble\bxpv@get@mversion
 \def\bxpv@get@mversion{%
-  \let\bxpv@mversion\relax
-  \ifx\bxpv@version\@empty\else
+  \edef\bxpv@version{\bxpv@version}%
+  \ifx\bxpv@version\@empty
+    \global\let\bxpdfverMinorVersion\relax % unset
+  \else
+    \let\bxpv@mversion\relax
     \@tfor\bxpv@x:=456789\do{%
       \edef\bxpv@tmpa{1.\bxpv@x}%
       \ifx\bxpv@version\bxpv@tmpa
@@ -282,6 +303,7 @@
       \PackageInfo\bxpv@pkgname
        {Output PDF version is set to 1.\the\bxpv@mversion
         \MessageBreak}%
+      \global\let\bxpdfverMinorVersion\bxpv@mversion
     \fi
   \fi
 }
@@ -290,6 +312,7 @@
 \@onlypreamble\bxpv@file@mversion
 \def\bxpv@file@mversion{%
   \begingroup
+    \let\bxpv@mversion\relax
     \expandafter\bxpv@file@mversion@a\bxpv@version\bxpv@end
     \global\let\bxpv@gtmpa\bxpv@mversion
   \endgroup
@@ -300,6 +323,7 @@
   \bxpv@okfalse
   \lowercase{\bxpv@file@mversion@b#1}%
    \bxpv@mark.pdf\bxpv@mark\bxpv@end
+   \show\ifbxpv@ok
   \ifbxpv@ok
     \openin\@inputcheck=#1\relax
     \bxpv@file@mversion@c
@@ -359,12 +383,12 @@
 %% \bxpv@set@version@dvipdfmx
 \@onlypreamble\bxpv@set@version@dvipdfmx
 \def\bxpv@set@version@dvipdfmx{%
-  \ifx\bxpv@mversion\relax\else
+  \ifx\bxpdfverMinorVersion\relax\else
     % special added to every page
     \AtBeginShipout{%
       \setbox\AtBeginShipoutBox=\vbox{%
         \baselineskip\z@skip\lineskip\z@skip\lineskiplimit\z@
-        \special{pdf:minorversion \the\bxpv@mversion}%
+        \special{pdf:minorversion \the\bxpdfverMinorVersion}%
         \copy\AtBeginShipoutBox
       }%
     }%
@@ -376,7 +400,7 @@
 
 \ifx t\bxUseDebug
 \typeout{%
-  mversion=\meaning\bxpv@mversion^^J%
+  mversion=\meaning\bxpdfverMinorVersion^^J%
   compress=\meaning\bxpv@compress^^J%
   objcompress=\meaning\bxpv@obj@compress^^J%
   drvtype=\meaning\bxpv@drv@type^^J%
@@ -399,14 +423,13 @@
 
 %% Applies the setting specified by package options
 \ifx\bxpv@version\relax\else
-  \bxpv@get@mversion
-  \bxpv@set@version
+  \setpdfversion{\bxpv@version}
 \fi
 \if t\bxpv@compress\else
-  \bxpv@suppress@compress
+  \suppresspdfcompression
 \fi
 \if t\bxpv@obj@compress\else
-  \bxpv@suppress@obj@compress
+  \suppresspdfobjcompression
 \fi
 
 %--------------------------------------- all done
