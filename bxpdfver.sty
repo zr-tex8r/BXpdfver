@@ -222,8 +222,11 @@
   %\global\let\bxpv@suppress@obj@compress\relax
   \global\let\bxpv@set@version\relax
   \g@addto@macro\bxpv@begin@document@hook{%
-    \bxpv@set@version@dvipdfmx
+    \bxpv@begin@document@dvipdfmx
   }
+  \AtEndOfPackage{\g@addto@macro\bxpv@begin@document@hook{%
+    \bxpv@cache@finalize
+  }}
 \else\if 0\bxpv@drv@type % 'disabled'
   \global\chardef\bxpv@infolevel=0
 \fi\fi\fi\fi
@@ -378,7 +381,13 @@
 \ifx d\bxpv@drv@type % 'dvipdfmx'
 
 %% required packages
-\RequirePackage{atbegshi}[2009/07/70]
+\RequirePackage{atbegshi}[2007/04/19]% v1.2
+
+%% \bxpv@begin@document@dvipdfmx
+\@onlypreamble\bxpv@begin@document@dvipdfmx
+\def\bxpv@begin@document@dvipdfmx{%
+  \bxpv@set@version@dvipdfmx
+}
 
 %% \bxpv@set@version@dvipdfmx
 \@onlypreamble\bxpv@set@version@dvipdfmx
@@ -396,6 +405,107 @@
 }
 
 \fi
+%--------------------------------------- file reader
+
+%% variables
+\let\bxpv@rf@parse\relax    % line parser
+\let\bxpv@rf@line\relax     % line content
+\let\bxpv@rf@cont\relax     % continue to read?
+
+%% \bxpv@read@file@error
+% The unique token signifying read error.
+\def\bxpv@read@file@error{\bxpv@read@file@error@}
+
+%% \bxpv@read@file{<file-name>}{<line-parser-code>}
+% Reads from a text file. The line parser takes as #1 the
+% content of each line. 
+\def\bxpv@read@file#1#{%
+  \begingroup
+    \openin\@inputcheck=#1\relax
+    \afterassignment\bxpv@read@file@a
+      \def\bxpv@rf@parse##1%
+}
+\@onlypreamble\bxpv@read@file@a
+\def\bxpv@read@file@a{%
+    \ifeof\@inputcheck
+      \global\let\bxpv@g@value\bxpv@read@file@error
+    \else
+      % freeze special characters
+      \@tempcnta\z@
+      \loop\ifnum\@tempcnta<\@cclvi
+        \catcode\@tempcnta12
+        \advance\@tempcnta\@ne
+      \repeat
+      \endlinechar\m@ne
+      % go to loop
+      \global\let\bxpv@g@value\relax
+      \chardef\bxpv@rf@cont\@ne
+      \bxpv@read@file@b
+    \fi
+  \endgroup
+}
+\@onlypreamble\bxpv@read@file@b
+\def\bxpv@read@file@b{%
+  \read\@inputcheck to\bxpv@rf@line
+  \expandafter\bxpv@rf@parse\expandafter{\bxpv@rf@line}%
+  \ifeof\@inputcheck
+    \chardef\bxpv@rf@cont\z@
+  \fi
+  \ifnum\bxpv@rf@cont>\z@
+    \expandafter\bxpv@read@file@b
+  \fi
+}
+
+%% \bxpv@read@file@finish
+\@onlypreamble\bxpv@read@file@finish
+\def\bxpv@read@file@finish{%
+  \chardef\bxpv@rf@cont\z@
+}
+
+%--------------------------------------- simple cache system
+% - \bxpv@cache@xxx can be invoked only in \AtBeginDocument.
+% - \bxpv@cache@finalize must be called last.
+
+%% \bxpv@g@value
+% The return variable for fetchers.
+\@onlypreamble\bxpv@g@value
+\let\bxpv@g@value\@undefined
+
+%% \bxpv@cache@fetch{<key>}
+\@onlypreamble\bxpv@cache@fetch
+\def\bxpv@cache@fetch#1{%
+  \begingroup
+    \expandafter\ifx\csname bxpv@cache@@#1\endcsname\relax
+      \global\let\bxpv@g@value\@empty
+      \@nameuse{bxpv@cache@get@@#1}%
+      \bxpv@cache@store{#1}{\bxpv@g@value}%
+      \bxDebug{cache-fetch:#1=\@nameuse{bxpv@cache@@#1}}%
+    \fi
+  \endgroup
+}
+
+%% \bxpv@cache@store{<key>}{<value>}
+\def\bxpv@cache@store#1#2{%
+  \expandafter\ifx\csname bxpv@cache@@#1\endcsname\relax
+    \expandafter\xdef\csname bxpv@cache@@#1\endcsname{#2}%
+    \g@addto@macro\bxpv@cache@keylist{{#1}}%
+  \fi
+}
+\@onlypreamble\bxpv@cache@keylist
+\let\bxpv@cache@keylist\@empty
+
+%% \bxpv@cache@finalize
+\@onlypreamble\bxpv@cache@finalize
+\def\bxpv@cache@finalize{%
+  \if@filesw
+    \def\bxpv@x{\@tfor\bxpv@x:=}%
+    \expandafter\bxpv@x\bxpv@cache@keylist\do{%
+      \immediate\write\@auxout{%
+        \string\bxpv@cache@store{\bxpv@x}{\@nameuse{bxpv@cache@@\bxpv@x}}}}%
+  \fi
+  \global\let\bxpv@cache@store\@gobbletwo % for end-document clear-up
+}
+
 %--------------------------------------- start-up
 
 \ifx t\bxUseDebug
