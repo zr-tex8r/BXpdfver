@@ -91,11 +91,20 @@
 
 %% unique tokens
 \def\bxpv@end{\bxpv@end@}
+\def\bxpv@mkj{\bxpv@mk@}
 \def\bxpv@mt{\bxpv@mt@}
 
 %% \bxpv@csletcs
 \def\bxpv@csletcs#1#2{%
   \expandafter\let\csname#1\expandafter\endcsname\csname#2\endcsname
+}
+
+%% \bxpv@detokenize\CS
+\def\bxpv@detokenize#1{%
+  \expandafter\bxpv@detokenize@a\meaning#1\bxpv@end#1%
+}
+\def\bxpv@detokenize@a#1>#2\bxpv@end#3{%
+  \def#3{#2}%
 }
 
 %% \bxpv@fail{<message>}
@@ -314,45 +323,31 @@
 %% \bxpv@file@mversion
 \@onlypreamble\bxpv@file@mversion
 \def\bxpv@file@mversion{%
-  \begingroup
-    \let\bxpv@mversion\relax
-    \expandafter\bxpv@file@mversion@a\bxpv@version\bxpv@end
-    \global\let\bxpv@gtmpa\bxpv@mversion
-  \endgroup
-  \let\bxpv@mversion\bxpv@gtmpa
+  \let\bxpv@mversion\relax
+  \expandafter\bxpv@file@mversion@a\bxpv@version\bxpv@end
 }
 \@onlypreamble\bxpv@file@mversion@a
 \def\bxpv@file@mversion@a#1\bxpv@end{%
-  \bxpv@okfalse
-  \lowercase{\bxpv@file@mversion@b#1}%
-   \bxpv@mark.pdf\bxpv@mark\bxpv@end
-   \show\ifbxpv@ok
-  \ifbxpv@ok
-    \openin\@inputcheck=#1\relax
-    \bxpv@file@mversion@c
-    \closein\@inputcheck
+  \filename@parse{#1}%
+  \edef\bxpv@next{%
+    \lowercase{\def\noexpand\filename@ext{\filename@ext}}%
+  }\bxpv@next
+  \def\bxpv@tmpb{pdf}%
+  \ifx\filename@ext\bxpv@tmpb
+    \bxpv@read@file{#1}{%
+      \bxpv@file@mversion@xa{##1 }%
+      \bxpv@read@file@finish
+    }%
+    \ifx\bxpv@g@value\bxpv@read@file@error
+      \PackageWarning\bxpv@pkgname
+       {File '#1' not found}%
+    \fi
     \@tfor\bxpv@x:=456789\do{%
-      \ifx\bxpv@x\bxpv@tmpb
+      \ifx\bxpv@x\bxpv@g@value
         \chardef\bxpv@mversion=\bxpv@x\relax
       \fi
     }%
   \fi
-}
-\@onlypreamble\bxpv@file@mversion@b
-\def\bxpv@file@mversion@b#1.pdf\bxpv@mark#2\bxpv@end{%
-  \ifx\bxpv@mt#2\bxpv@mt\else \bxpv@oktrue \fi
-}
-\@onlypreamble\bxpv@file@mversion@c
-\def\bxpv@file@mversion@c{%
-  \@tempcnta\z@
-  \loop\ifnum\@tempcnta<\@cclvi
-    \catcode\@tempcnta12 %
-    \advance\@tempcnta\@ne
-  \repeat
-  \endlinechar=32
-  \catcode32=10
-  \read\@inputcheck to\bxpv@tmpb
-  \expandafter\bxpv@file@mversion@xa\bxpv@tmpb\bxpv@end
 }
 % some more subprocedures
 \@onlypreamble\bxpv@file@mversion@xa
@@ -361,7 +356,7 @@
 \begingroup
   \escapechar\m@ne
   \def\bxpv@tmpa#1\bxpv@end{%
-    \gdef\bxpv@file@mversion@xa##1\bxpv@end{%
+    \gdef\bxpv@file@mversion@xa##1{%
       \bxpv@file@mversion@xb##1#1\bxpv@end
     }%
     \gdef\bxpv@file@mversion@xb##1#1##2\bxpv@end{%
@@ -370,7 +365,7 @@
       \fi
     }%
     \gdef\bxpv@file@mversion@xc##1 ##2\bxpv@end{%
-      \def\bxpv@tmpb{##1}%
+      \gdef\bxpv@g@value{##1}%
     }%
   }
   \edef\bxpv@tmpb{{\expandafter\string\csname\string\%PDF-1.\endcsname}}%
@@ -419,7 +414,7 @@
 %% \bxpv@read@file{<file-name>}{<line-parser-code>}
 % Reads from a text file. The line parser takes as #1 the
 % content of each line. 
-\def\bxpv@read@file#1#{%
+\def\bxpv@read@file#1{%
   \begingroup
     \openin\@inputcheck=#1\relax
     \afterassignment\bxpv@read@file@a
@@ -447,6 +442,7 @@
 \@onlypreamble\bxpv@read@file@b
 \def\bxpv@read@file@b{%
   \read\@inputcheck to\bxpv@rf@line
+  \bxpv@detokenize\bxpv@rf@line
   \expandafter\bxpv@rf@parse\expandafter{\bxpv@rf@line}%
   \ifeof\@inputcheck
     \chardef\bxpv@rf@cont\z@
