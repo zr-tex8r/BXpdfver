@@ -334,16 +334,17 @@
   }\bxpv@next
   \def\bxpv@tmpb{pdf}%
   \ifx\filename@ext\bxpv@tmpb
+    \global\let\bxpv@gtmpa\relax
     \bxpv@read@file{#1}{%
       \bxpv@file@mversion@xa{##1 }%
       \bxpv@read@file@finish
     }%
-    \ifx\bxpv@g@value\bxpv@read@file@error
+    \ifbxpv@read@file@ok\else
       \PackageWarning\bxpv@pkgname
        {File '#1' not found}%
     \fi
     \@tfor\bxpv@x:=456789\do{%
-      \ifx\bxpv@x\bxpv@g@value
+      \ifx\bxpv@x\bxpv@gtmpa
         \chardef\bxpv@mversion=\bxpv@x\relax
       \fi
     }%
@@ -365,7 +366,7 @@
       \fi
     }%
     \gdef\bxpv@file@mversion@xc##1 ##2\bxpv@end{%
-      \gdef\bxpv@g@value{##1}%
+      \gdef\bxpv@gtmpa{##1}%
     }%
   }
   \edef\bxpv@tmpb{{\expandafter\string\csname\string\%PDF-1.\endcsname}}%
@@ -407,14 +408,15 @@
 \let\bxpv@rf@line\relax     % line content
 \let\bxpv@rf@cont\relax     % continue to read?
 
-%% \bxpv@read@file@error
-% The unique token signifying read error.
-\def\bxpv@read@file@error{\bxpv@read@file@error@}
+%% \ifbxpv@read@file@ok
+% Whether or not the last \bxpv@read@file succeeded.
+\newboolean{bxpv@read@file@ok}
 
 %% \bxpv@read@file{<file-name>}{<line-parser-code>}
 % Reads from a text file. The line parser takes as #1 the
 % content of each line. 
 \def\bxpv@read@file#1{%
+  \bxpv@read@file@oktrue
   \begingroup
     \openin\@inputcheck=#1\relax
     \afterassignment\bxpv@read@file@a
@@ -423,7 +425,7 @@
 \@onlypreamble\bxpv@read@file@a
 \def\bxpv@read@file@a{%
     \ifeof\@inputcheck
-      \global\let\bxpv@g@value\bxpv@read@file@error
+      \aftergroup\bxpv@read@file@okfalse
     \else
       % freeze special characters
       \@tempcnta\z@
@@ -433,7 +435,6 @@
       \repeat
       \endlinechar\m@ne
       % go to loop
-      \global\let\bxpv@g@value\relax
       \chardef\bxpv@rf@cont\@ne
       \bxpv@read@file@b
     \fi
