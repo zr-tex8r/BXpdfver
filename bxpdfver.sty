@@ -153,6 +153,11 @@
 \let\bxpv@begin@document@hook\@empty
 \AtBeginDocument{\bxpv@begin@document@hook}
 
+%% 'disabled' driver
+\if 0\bxpv@drv@type
+  \chardef\bxpv@infolevel=0
+\fi
+
 %% adjust internal dispatchers
 \ifx 0\bxpv@drv@type\else               %--------
 \begingroup
@@ -226,13 +231,9 @@
   \bxpv@fail{Unsupported driver '\bxpv@drv@name'}%
   % no further errors
   \global\chardef\bxpv@infolevel=0
-\else\if \relax\bxpv@drv@type % no driver
-  \PackageWarningNoLine\bxpv@pkgname
-   {No driver option is given}%
-  \global\chardef\bxpv@infolevel=0
 \else\if d\bxpv@drv@type % 'dvipdfmx'
   \global\let\bxpv@suppress@compress\relax
-  %\global\let\bxpv@suppress@obj@compress\relax
+  \global\let\bxpv@suppress@obj@compress\relax
   \global\let\bxpv@set@version\relax
   \g@addto@macro\bxpv@begin@document@hook{%
     \bxpv@begin@document@dvipdfmx
@@ -240,9 +241,11 @@
   \AtEndOfPackage{\g@addto@macro\bxpv@begin@document@hook{%
     \bxpv@cache@finalize
   }}
-\else\if 0\bxpv@drv@type % 'disabled'
+\else\if \relax\bxpv@drv@type % no driver
+  \bxpv@fail
+   {No driver option is given}%
   \global\chardef\bxpv@infolevel=0
-\fi\fi\fi\fi
+\fi\fi\fi
 
 \endgroup
 \fi                                     %--------
@@ -383,6 +386,9 @@
 %% required packages
 \RequirePackage{atbegshi}[2007/04/19]% v1.2
 
+%% variables
+\let\bxpv@C@value\relax
+
 %% \bxpv@page@specials
 \let\bxpv@page@specials\@empty
 
@@ -397,21 +403,30 @@
   \fi
   % compression
   \ifbxpdfverCompressionSuppressed
-    \bxpv@cache@fetch{dvipdfmxver}%
-    \ifnum\bxpv@cache@@dvipdfmxver<20160307
-      \bxpv@fail
-       {Cannot suppress compression, because the version\MessageBreak
-        of dvipdfmx in use (v.\bxpv@cache@@dvipdfmxver) is too old
-        \MessageBreak (v.20160307 or later is required)}%
-    \else
-      \PackageInfo\bxpv@pkgname
-       {dvipdfmx version is \bxpv@cache@@dvipdfmxver\@gobble}%
+    \bxpv@check@dvipdfmx@version{Cannot suppress compression}%
+    \ifbxpv@ok
       % New dvipdfmx supports this special.
       \g@addto@macro\bxpv@page@specials{%
         \special{dvipdfmx:config z 0}%
       }%
     \fi
-    \bxpv@cache@fetch{dvipdfmxcfg}%
+  \fi
+  % object compression
+  \ifbxpdfverObjCompressionSuppressed
+    \bxpv@check@dvipdfmx@version{Cannot suppress object compression}%
+    \ifbxpv@ok
+      \bxpv@cache@fetch{dvipdfmxcfg}%
+      \def\bxpv@C@value{0}%
+      \ifx\bxpv@cache@@dvipdfmxcfg\@empty\else
+        \def\bxpv@next##1##2{\def\bxpv@C@value{##1}}%
+        \expandafter\bxpv@next\bxpv@cache@@dvipdfmxcfg
+      \fi
+      \bxpv@rc@bitset{\bxpv@C@value}{64}%
+      \let\bxpv@C@value\bxpv@rc@num
+      \g@addto@macro\bxpv@page@specials{%
+        \special{dvipdfmx:config C \bxpv@C@value}%
+      }%
+    \fi
   \fi
   % special added to every page
   \ifx\bxpv@page@specials\@empty\else
@@ -424,6 +439,28 @@
       }%
     }%
   \fi
+}
+
+%% \bxpv@check@dvipdfmx@version
+\@onlypreamble\bxpv@check@dvipdfmx@version
+\def\bxpv@check@dvipdfmx@version#1{%
+  \bxpv@cache@fetch{dvipdfmxver}%
+  \bxpv@okfalse
+  \ifnum\bxpv@cache@@dvipdfmxver=\z@
+    \bxpv@fail
+     {#1, because the\MessageBreak
+      version of dvipdfmx in use is unknown
+      \MessageBreak (v.20160307 or later is required)}%
+  \else\ifnum\bxpv@cache@@dvipdfmxver<20160307
+    \bxpv@fail
+     {#1, because the\MessageBreak
+      version of dvipdfmx in use (v.\bxpv@cache@@dvipdfmxver) is too old
+      \MessageBreak (v.20160307 or later is required)}%
+  \else
+    \PackageInfo\bxpv@pkgname
+     {dvipdfmx version is \bxpv@cache@@dvipdfmxver\@gobble}%
+    \bxpv@oktrue
+  \fi\fi
 }
 
 \fi
@@ -529,6 +566,15 @@
   \afterassignment\bxpv@rc@parse@num@c\@tempcnta=\bxpv@tmpy
 }
 \def\bxpv@rc@parse@num@c#1\relax{% discard trailer
+  \edef\bxpv@rc@num{\the\@tempcnta}%
+}
+
+%% \bxpv@rc@bitset{<number1>}{<number2>}
+% Returns to \bxpv@rc@num.
+\def\bxpv@rc@bitset#1#2{%
+  \@tempcnta=#1\relax \divide\@tempcnta#2\relax
+  \@tempcnta=\ifodd\@tempcnta\z@\else#2\relax\fi
+  \advance\@tempcnta#1\relax
   \edef\bxpv@rc@num{\the\@tempcnta}%
 }
 
