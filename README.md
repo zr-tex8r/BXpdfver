@@ -54,7 +54,13 @@ when it is already suppressed by other means.
 ### NOTE ON DRIVERS
 
   * pdfTeX and LuaTeX support all features.
-  * XeTeX and dvipdfmx support only PDF version setting.
+  * When using XeTeX and dvipdfmx:
+      - PDF version setting is always available.
+      - Suppression of compression and suppression of object streams
+        are available only when the version of (x)dvipdfmx is 20160307
+        or later. Also shell escape must be accepted (with or without
+        restriction), because external programs (such as kpsewhich)
+        are invoked in order to detect the dvipdfmx version.
   * If you try to use unavailable features, an error will occur.
   * The package recognizes some “unsupported” driver options such as
     `dvips`; when such drivers are used, use of any feature will cause
@@ -69,12 +75,14 @@ when it is already suppressed by other means.
       + `1.4`, `1.5`, `1.6`, or `1.7`; the version itself.
       + the name of a PDF file; the version is set equal to that of
         the given file.
-  * `\suppresspdfcompression`: Suppresses use of object streams.
+  * `\suppresspdfcompression`: Suppresses stream compression.
   * `\suppresspdfobjcompression`: Suppresses use of object streams.
 
 REVISION HISTORY
 ----------------
 
+  * Version 0.3  ‹2016/08/11›
+      - Supported all features on dvipdfmx/XeTeX.
   * Version 0.2b ‹2016/08/10›
       - Added the `lenient` option.
       - Supported the newer version of LuaTeX.
