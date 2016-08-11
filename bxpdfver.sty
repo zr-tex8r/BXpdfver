@@ -115,9 +115,7 @@
   \or % lenient
     \PackageWarningNoLine\bxpv@pkgname{#1}%
   \or % strict
-    \PackageError\bxpv@pkgname{#1}%
-     {This feature is not supported by the engine in use.%
-      \MessageBreak\@ehc}%
+    \PackageError\bxpv@pkgname{#1}{\@ehc}%
   \fi
 }
 
@@ -126,17 +124,23 @@
 %% \bxpv@suppress@compress
 \@onlypreamble\bxpv@suppress@compress
 \def\bxpv@suppress@compress{%
-  \bxpv@fail{Cannot suppress compression}%
+  \bxpv@fail
+   {Cannot suppress compression, because\MessageBreak
+    the engine/driver does not support the feature}%
 }
 %% \bxpv@suppress@obj@compress
 \@onlypreamble\bxpv@suppress@obj@compress
 \def\bxpv@suppress@obj@compress{%
-  \bxpv@fail{Cannot suppress object compression}%
+  \bxpv@fail
+   {Cannot suppress object compression, because\MessageBreak
+    the engine/driver does not support the feature}%
 }
 %% \bxpv@set@version
 \@onlypreamble\bxpv@set@version
 \def\bxpv@set@version{%
-  \bxpv@fail{Cannot set PDF version}%
+  \bxpv@fail
+   {Cannot set PDF version, because\MessageBreak
+    the engine/driver does not support the feature}%
 }
 %% \bxpv@cancel@obj@compress
 % The silent version of \bxpv@suppress@obj@compress.
@@ -227,7 +231,7 @@
    {No driver option is given}%
   \global\chardef\bxpv@infolevel=0
 \else\if d\bxpv@drv@type % 'dvipdfmx'
-  %\global\let\bxpv@suppress@compress\relax
+  \global\let\bxpv@suppress@compress\relax
   %\global\let\bxpv@suppress@obj@compress\relax
   \global\let\bxpv@set@version\relax
   \g@addto@macro\bxpv@begin@document@hook{%
@@ -379,21 +383,43 @@
 %% required packages
 \RequirePackage{atbegshi}[2007/04/19]% v1.2
 
+%% \bxpv@page@specials
+\let\bxpv@page@specials\@empty
+
 %% \bxpv@begin@document@dvipdfmx
 \@onlypreamble\bxpv@begin@document@dvipdfmx
 \def\bxpv@begin@document@dvipdfmx{%
-  \bxpv@set@version@dvipdfmx
-}
-
-%% \bxpv@set@version@dvipdfmx
-\@onlypreamble\bxpv@set@version@dvipdfmx
-\def\bxpv@set@version@dvipdfmx{%
+  % PDF version
   \ifx\bxpdfverMinorVersion\relax\else
-    % special added to every page
+    \g@addto@macro\bxpv@page@specials{%
+      \special{pdf:minorversion \the\bxpdfverMinorVersion}%
+    }%
+  \fi
+  % compression
+  \ifbxpdfverCompressionSuppressed
+    \bxpv@cache@fetch{dvipdfmxver}%
+    \ifnum\bxpv@cache@@dvipdfmxver<20160307
+      \bxpv@fail
+       {Cannot suppress compression, because the version\MessageBreak
+        of dvipdfmx in use (v.\bxpv@cache@@dvipdfmxver) is too old
+        \MessageBreak (v.20160307 or later is required)}%
+    \else
+      \PackageInfo\bxpv@pkgname
+       {dvipdfmx version is \bxpv@cache@@dvipdfmxver\@gobble}%
+      % New dvipdfmx supports this special.
+      \g@addto@macro\bxpv@page@specials{%
+        \special{dvipdfmx:config z 0}%
+      }%
+    \fi
+    \bxpv@cache@fetch{dvipdfmxcfg}%
+  \fi
+  % special added to every page
+  \ifx\bxpv@page@specials\@empty\else
+    \edef\bxpv@page@specials{\bxpv@page@specials}%
     \AtBeginShipout{%
       \setbox\AtBeginShipoutBox=\vbox{%
         \baselineskip\z@skip\lineskip\z@skip\lineskiplimit\z@
-        \special{pdf:minorversion \the\bxpdfverMinorVersion}%
+        \bxpv@page@specials
         \copy\AtBeginShipoutBox
       }%
     }%
@@ -401,6 +427,141 @@
 }
 
 \fi
+%--------------------------------------- software version
+
+%% \bxpv@cache@get@@newtex
+% Returns 1 if the version of TeX is 3.14159265 (released on
+% 2014/01/20) or later, 0 otherwise.
+\@onlypreamble\bxpv@cache@get@@newtex
+\def\bxpv@cache@get@@newtex{%
+  \edef\bxpv@tmpa{\expandafter\noexpand\csname\endcsname}%
+  \def\bxpv@tmpb##1 ##2##3\@nil{\gdef\bxpv@g@value{##2}}%
+  \expandafter\bxpv@tmpb\meaning\bxpv@tmpa1 0\@nil
+}
+
+%% \bxpv@cache@get@@dvipdfmxver
+% Returns the version of dvipdfmx (eg. 20110311).
+% It returns 0 in failure.
+\@onlypreamble\bxpv@cache@get@@dvipdfmxver
+\def\bxpv@cache@get@@dvipdfmxver{%
+  % Here the version of TeX is checked, bacause on old TeX
+  % engines on Windows, pipe inputs will fail when the
+  % command line has arguments.
+  \bxpv@cache@fetch{newtex}%
+  \global\let\bxpv@gtmpa\relax
+  \ifnum\bxpv@cache@@newtex>\z@
+    \def\bxpv@tmpc{This is extractbb Version }%
+    \bxpv@detokenize\bxpv@tmpc
+    \bxpv@read@file{"|extractbb --version"}{%
+      \bxpv@split@at{\bxpv@tmpc}{##1}%
+      \ifx\bxpv@pre\relax\else
+        \global\let\bxpv@gtmpa\bxpv@post
+      \fi
+    }%
+  \fi
+  \ifx\bxpv@gtmpa\relax % failed somewhere
+    \gdef\bxpv@g@value{0}%
+  \else
+    \global\let\bxpv@g@value\bxpv@gtmpa
+  \fi
+}
+
+%--------------------------------------- dvipdfmx config
+
+%% variables
+\let\bxpv@rc@num\relax
+
+%% \bxpv@cache@get@@dvipdfmxcfg
+\@onlypreamble\bxpv@cache@get@@dvipdfmxcfg
+\def\bxpv@cache@get@@dvipdfmxcfg{%
+  % check TeX version
+  \bxpv@cache@fetch{newtex}%
+  \ifnum\bxpv@cache@@newtex>\z@
+    % search dvipdfmx.cfg
+    \global\let\bxpv@gtmpa\@empty
+    \bxpv@read@file{%
+      "|kpsewhich --progname=dvipdfmx --format=othertext dvipdfmx.cfg"%
+    }{%
+      \gdef\bxpv@gtmpa{##1}%
+      \bxpv@read@file@finish
+    }%
+    % read the file
+    \ifx\bxpv@gtmpa\@empty\else
+      \gdef\bxpv@g@rc@tmp@C{0}%
+      \def\bxpv@rc@tmp@C{C }%
+      \bxpv@detokenize\bxpv@rc@tmp@C
+      \gdef\bxpv@g@rc@tmp@V{5}%
+      \def\bxpv@rc@tmp@V{V }%
+      \bxpv@detokenize\bxpv@rc@tmp@V
+      \bxpv@read@file{\bxpv@gtmpa}{%
+        \bxpv@split@at{\bxpv@rc@tmp@C}{##1}%
+        \ifx\bxpv@pre\@empty
+          \bxpv@rc@parse@num{\bxpv@post}%
+          \global\let\bxpv@g@rc@tmp@C\bxpv@rc@num
+        \fi
+        \bxpv@split@at{\bxpv@rc@tmp@V}{##1}%
+        \ifx\bxpv@pre\@empty
+          \bxpv@rc@parse@num{\bxpv@post}%
+          \global\let\bxpv@g@rc@tmp@V\bxpv@rc@num
+        \fi
+      }%
+      % the return value
+      \xdef\bxpv@g@value{{\bxpv@g@rc@tmp@C}{\bxpv@g@rc@tmp@V}}%
+    \fi
+  \fi
+}
+
+%% \bxpv@rc@parse@num{<string>}
+% Returns to \bxpv@rc@num.
+\def\bxpv@rc@parse@num#1{%
+  \edef\bxpv@tmpy{#1\relax\relax}%
+  \expandafter\bxpv@rc@parse@num@a\bxpv@tmpy\bxpv@end
+}
+\def\bxpv@rc@parse@num@a#1#2\bxpv@end{%
+  % skip leading spaces and change to uppercase
+  \uppercase{\bxpv@rc@parse@num@b#1#2\bxpv@end}%
+}
+\def\bxpv@rc@parse@num@b#1#2#3\bxpv@end{%
+  \def\bxpv@tmpy{#1#2#3}%
+  \if0#1\if X#2% convert '0x' to '"'
+    \def\bxpv@tmpy{"#3}%
+  \fi\fi
+  \afterassignment\bxpv@rc@parse@num@c\@tempcnta=\bxpv@tmpy
+}
+\def\bxpv@rc@parse@num@c#1\relax{% discard trailer
+  \edef\bxpv@rc@num{\the\@tempcnta}%
+}
+
+%--------------------------------------- string splitter
+
+%% variables
+\let\bxpv@pre\relax
+\let\bxpv@post\relax
+
+%% \bxpv@split@at{<sep>}{<text>}
+% Splits the text by the given separator.
+% In success, it will set \bxpv@pre and \bxpv@post.
+\def\bxpv@split@at#1#2{%
+  \edef\bxpv@next{{#1}{#2}}%
+  \expandafter\bxpv@split@at@a\bxpv@next
+}
+\def\bxpv@split@at@a#1#2{%
+  \def\bxpv@next##1#1##2\bxpv@end{%
+    \bxpv@split@at@b{##1}{##2}}%
+  \bxpv@next#2\bxpv@mk#1\bxpv@end
+}
+\def\bxpv@split@at@b#1#2{%
+  \ifx\bxpv@mt#2\bxpv@mt
+    \let\bxpv@pre\relax \let\bxpv@post\relax
+  \else
+    \def\bxpv@pre{#1}%
+    \bxpv@split@at@c#2\bxpv@end
+  \fi
+}%
+\def\bxpv@split@at@c#1\bxpv@mk#2\bxpv@end{%
+  \def\bxpv@post{#1}%
+}%
+
 %--------------------------------------- file reader
 
 %% variables
@@ -495,6 +656,10 @@
 \@onlypreamble\bxpv@cache@finalize
 \def\bxpv@cache@finalize{%
   \if@filesw
+    \ifx\bxpv@cache@keylist\@empty\else
+      \immediate\write\@auxout{%
+        \string\providecommand\string\bxpv@cache@store[2]{}}%
+    \fi
     \def\bxpv@x{\@tfor\bxpv@x:=}%
     \expandafter\bxpv@x\bxpv@cache@keylist\do{%
       \immediate\write\@auxout{%
