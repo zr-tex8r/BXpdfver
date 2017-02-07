@@ -845,26 +845,27 @@
 %--------------------------------------- start-up
 
 \ifx t\bxUseDebug
-\typeout{%
-  mversion=\meaning\bxpdfverMinorVersion^^J%
-  compress=\meaning\bxpv@compress^^J%
-  objcompress=\meaning\bxpv@obj@compress^^J%
-  drvtype=\meaning\bxpv@drv@type^^J%
-  drvname=\meaning\bxpv@drv@name^^J%
-  +version=\meaning\bxpv@set@version^^J%
-  +compress=\meaning\bxpv@suppress@compress^^J%
-  +objcompress=\meaning\bxpv@suppress@obj@compress^^J%
-}
-\ifx p\bxpv@drv@type
+  \typeout{**bxpdfver-----------%
+    ^^Jdrvtype=\meaning\bxpv@drv@type
+    ^^Jdrvname=\meaning\bxpv@drv@name}
   \AtBeginDocument{%
-    \def\do#1{\ifx#1\@undefined\else\the#1\fi}%
-    \typeout{%
-      pdfminorversion=\do\pdfminorversion^^J%
-      pdfcompresslevel=\do\pdfcompresslevel^^J%
-      pdfobjcompresslevel=\do\pdfobjcompresslevel^^J%
+    \def\do#1=#2{\ifx#2\@undefined\else
+      ^^J#1=\the#2 [\meaning#2]%
+    \fi}%
+    \def\next#1{\expandafter\meaning\csname if#1\endcsname}%
+    \typeout{**bxpdfver-----------%
+      ^^JMinorVersion=\meaning\bxpdfverMinorVersion
+      ^^JCompressionSuppressed=\next{bxpdfverCompressionSuppressed}%
+      ^^JObjCompressionSuppressed=\next{bxpdfverObjCompressionSuppressed}%
+      ^^JDecimalDigits=\meaning\bxpdfverDecimalDigits
+      ^^JPkResolution=\meaning\bxpdfverPkResolution
+      \do minorversion=\bxpv@@minorversion
+      \do compresslevel=\bxpv@@compresslevel
+      \do objcompresslevel=\bxpv@@objcompresslevel
+      \do decimaldigits=\bxpv@@decimaldigits
+      \do pkresolution=\bxpv@@pkresolution
     }%
   }
-\fi
 \fi
 
 %% Applies the setting specified by package options
