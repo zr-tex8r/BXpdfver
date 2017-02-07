@@ -157,6 +157,11 @@
 \def\bxpv@set@pkresolution{%
   \bxpv@fail@nafea{Cannot set PK resolution}%
 }
+%% \bxpv@preserve@destinations
+\@onlypreamble\bxpv@preserve@destinations
+\def\bxpv@preserve@destinations{%
+  \bxpv@fail@nafea{Cannot preserve PDF destinations}%
+}
 %% \bxpv@cancel@obj@compress
 % The silent version of \bxpv@suppress@obj@compress.
 \@onlypreamble\bxpv@cancel@obj@compress
@@ -260,6 +265,11 @@
       \fi
     }%
   \fi
+  % On pdfTeX or LuaTeX, \pdfpreservedestionations can be no-op.
+  \bxpv@oktrue \bxpv@check@prim\ngbanner{\bxpv@okfalse}%
+  \ifbxpv@ok
+    \global\let\bxpv@preserve@destinations\relax
+  \fi
 \else
   % XeTeX should do just as dvipdfmx.
   \bxpv@check@prim\XeTeXversion{%
@@ -278,6 +288,7 @@
   \global\let\bxpv@set@version\relax
   \global\let\bxpv@set@decimaldigits\relax
   %\global\let\bxpv@set@pkresolution\relax
+  \global\let\bxpv@preserve@destinations\relax
   \g@addto@macro\bxpv@begin@document@hook{%
     \bxpv@begin@document@dvipdfmx
   }
@@ -331,6 +342,13 @@
   \bxpv@set@pkresolution
 }
 
+%%<*> \preservepdfdestinations
+\@onlypreamble\preservepdfdestinations
+\newcommand*\preservepdfdestinations{%
+  \bxpv@preserve@destinations
+  \global\bxpdfverDestinationsPreservedtrue
+}
+
 %%<+> \ifbxpdfverCompressionSuppressed
 \newboolean{bxpdfverCompressionSuppressed}
 
@@ -357,6 +375,9 @@
 \@ifdefinable{\bxpdfverPkResolution}{%
   \let\bxpdfverPkResolution\relax
 }
+
+%%<+> \ifbxpdfverDestinationsPreserved
+\newboolean{bxpdfverDestinationsPreserved}
 
 %% \bxpv@assign@num\CS{<value>}{<min>}{<max>}
 \@onlypreamble\bxpv@assign@num
@@ -492,11 +513,19 @@
 
 %% variables
 \let\bxpv@C@value\relax
-\let\bxpv@d@value\relax
-\let\bxpv@r@value\relax
+
+%% \bxpv@C@bits
+\@onlypreamble\bxpv@C@bits
+\let\bxpv@C@bits\@empty
 
 %% \bxpv@page@specials
 \let\bxpv@page@specials\@empty
+
+%% \bxpv@put@special
+\@onlypreamble\bxpv@put@special
+\def\bxpv@put@special#1{%
+  \edef\bxpv@page@specials{\bxpv@page@specials\special{#1}}%
+}
 
 %% \bxpv@begin@document@dvipdfmx
 \@onlypreamble\bxpv@begin@document@dvipdfmx
@@ -523,17 +552,7 @@
     \bxpv@check@dvipdfmx@version{20160307}%
      {Cannot suppress object compression}%
     \ifbxpv@ok
-      \bxpv@cache@fetch{dvipdfmxcfg}%
-      \def\bxpv@C@value{0}%
-      \ifx\bxpv@cache@@dvipdfmxcfg\@empty\else
-        \def\bxpv@next##1##2{\def\bxpv@C@value{##1}}%
-        \expandafter\bxpv@next\bxpv@cache@@dvipdfmxcfg
-      \fi
-      \bxpv@rc@bitset{\bxpv@C@value}{64}%
-      \let\bxpv@C@value\bxpv@rc@num
-      \g@addto@macro\bxpv@page@specials{%
-        \special{dvipdfmx:config C \bxpv@C@value}%
-      }%
+      \g@addto@macro\bxpv@C@bits{\do{64}}%
     \fi
   \fi
   % PDF decimal digits
@@ -541,20 +560,34 @@
     \bxpv@check@dvipdfmx@version{20160307}%
      {Cannot set PDF decimal digits}%
     \ifbxpv@ok
-      \edef\bxpv@d@value{\the\bxpdfverDecimalDigits}%
-      \g@addto@macro\bxpv@page@specials{%
-        \special{dvipdfmx:config d \bxpv@d@value}%
-      }%
+      \bxpv@put@special{dvipdfmx:config d \the\bxpdfverDecimalDigits}%
     \fi
   \fi
   % PK resolution
   \ifx\bxpdfverPkResolution\relax\else
     \iffalse % This will never work....
-      \edef\bxpv@r@value{\the\bxpdfverPkResolution}%
-      \g@addto@macro\bxpv@page@specials{%
-        \special{dvipdfmx:config r \bxpv@r@value}%
-      }%
+      \bxpv@put@special{dvipdfmx:config r \the\bxpdfverPkResolution}%
     \fi
+  \fi
+  % PDF destinations
+  \ifbxpdfverDestinationsPreserved
+    \bxpv@check@dvipdfmx@version{20160307}%
+     {Cannot preserve PDF destinations}%
+    \ifbxpv@ok
+      \g@addto@macro\bxpv@C@bits{\do{16}}%
+    \fi
+  \fi
+  % C option value
+  \ifx\bxpv@C@bits\@empty\else
+    \bxpv@cache@fetch{dvipdfmxcfg}%
+    \def\bxpv@next##1##2\bxpv@mk{\def\bxpv@C@value{##1}}%
+    \expandafter\bxpv@next\bxpv@cache@@dvipdfmxcfg{0}\bxpv@mk
+    \bxpv@rc@bitset{\bxpv@C@value}{64}%
+    \def\do##1{%
+      \bxpv@rc@bitset{\bxpv@C@value}{##1}%
+      \let\bxpv@C@value\bxpv@rc@num}%
+    \bxpv@C@bits
+    \bxpv@put@special{dvipdfmx:config C \bxpv@C@value}%
   \fi
   % special added to every page
   \ifx\bxpv@page@specials\@empty\else
@@ -864,6 +897,7 @@
       \do objcompresslevel=\bxpv@@objcompresslevel
       \do decimaldigits=\bxpv@@decimaldigits
       \do pkresolution=\bxpv@@pkresolution
+      ^^JCvalue=\meaning\bxpv@C@value
     }%
   }
 \fi
