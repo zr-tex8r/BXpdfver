@@ -21,25 +21,15 @@
 \let\bxpv@obj@compress=t  % use object stream?
 \chardef\bxpv@infolevel=2 % info-log level
 
+%% \bxpv@valid@versions
+\def\bxpv@valid@versions{1.4,1.5,1.6,1.7,2.0}
+
 %% options
 % (PDF version)
-\DeclareOption{1.4}{%
-  \edef\bxpv@version{\CurrentOption}%
-}
-\DeclareOption{1.5}{%
-  \edef\bxpv@version{\CurrentOption}%
-}
-\DeclareOption{1.6}{%
-  \edef\bxpv@version{\CurrentOption}%
-}
-\DeclareOption{1.7}{%
-  \edef\bxpv@version{\CurrentOption}%
-}
-\DeclareOption{1.8}{%
-  \edef\bxpv@version{\CurrentOption}%
-}
-\DeclareOption{1.9}{%
-  \edef\bxpv@version{\CurrentOption}%
+\@for\bxpv@tmpa:=\bxpv@valid@versions\do{%
+  \DeclareOption{\bxpv@tmpa}{%
+    \edef\bxpv@version{\CurrentOption}%
+  }%
 }
 % (compression)
 \DeclareOption{nocompress}{%
@@ -148,6 +138,9 @@
 \def\bxpv@suppress@obj@compress{%
   \bxpv@fail@nafea{Cannot suppress object compression}%
 }
+%% \bxpv@check@version
+\@onlypreamble\bxpv@check@version
+\let\bxpv@check@version\bxpv@okfalse
 %% \bxpv@set@version
 \@onlypreamble\bxpv@set@version
 \def\bxpv@set@version{%
@@ -212,12 +205,17 @@
   \global\let\bxpv@@minorversion\pdfminorversion
   \global\let\bxpv@@decimaldigits\pdfdecimaldigits
   \global\let\bxpv@@pkresolution\pdfpkresolution
+  \global\let\bxpv@@majorversion\pdfmajorversion
   \bxpv@check@prim\pdfvariable{%
     \protected\xdef\bxpv@@compresslevel{\pdfvariable compresslevel}%
     \protected\xdef\bxpv@@objcompresslevel{\pdfvariable objcompresslevel}%
     \protected\xdef\bxpv@@minorversion{\pdfvariable minorversion}%
     \protected\xdef\bxpv@@decimaldigits{\pdfvariable decimaldigits}%
     \protected\xdef\bxpv@@pkresolution{\pdfvariable pkresolution}%
+    \ifnum 0\directlua{%
+      if pdf.getmajorversion then tex.write('1') end}>\z@
+      \protected\xdef\bxpv@@majorversion{\pdfvariable majorversion}%
+    \fi
   }%
   % If \pdfcompresslevel is available, use it.
   \ifbxpv@defined\bxpv@@compresslevel
@@ -233,9 +231,33 @@
     }%
     \global\let\bxpv@cancel@obj@compress\bxpv@suppress@obj@compress
   \fi
-  % If \pdfminorversion is available, use it.
-  \ifbxpv@defined\bxpv@@minorversion
+  % If \pdfmajorversion/\pdfminorversion is available, use it.
+  \ifbxpv@defined\bxpv@@majorversion
     \global\chardef\bxpv@org@minorversion\bxpv@@minorversion
+    \global\chardef\bxpv@org@majorversion\bxpv@@majorversion
+    \global\let\bxpv@check@version\bxpv@oktrue
+    \gdef\bxpv@set@version{%
+      \ifx\bxpdfverMinorVersion\relax
+        \global\bxpv@@minorversion\bxpv@org@minorversion
+        \global\bxpv@@majorversion\bxpv@org@majorversion
+      \else
+        \global\bxpv@@minorversion\bxpdfverMinorVersion
+        \global\bxpv@@majorversion\bxpdfverMajorVersion
+      \fi
+    }%
+    \g@addto@macro\bxpv@begin@document@hook{%
+      \ifnum\bxpv@@majorversion<2 \ifnum\bxpv@@minorversion<5
+        \bxpv@cancel@obj@compress
+      \fi\fi
+    }%
+  \else\ifbxpv@defined\bxpv@@minorversion
+    \global\chardef\bxpv@org@minorversion\bxpv@@minorversion
+    \gdef\bxpv@check@version{%
+      \bxpv@oktrue
+      \ifx\bxpdfverMajorVersion\tw@
+        \bxpv@okfalse % cannot set major version 2
+      \fi
+    }
     \gdef\bxpv@set@version{%
       \ifx\bxpdfverMinorVersion\relax
         \global\bxpv@@minorversion\bxpv@org@minorversion
@@ -248,7 +270,7 @@
         \bxpv@cancel@obj@compress
       \fi
     }%
-  \fi
+  \fi\fi
   % If \pdfdecimaldigits is available, use it.
   \ifbxpv@defined\bxpv@@decimaldigits
     \global\chardef\bxpv@org@decimaldigits\bxpv@@decimaldigits
@@ -291,6 +313,7 @@
 \else\if d\bxpv@drv@type % 'dvipdfmx'
   \global\let\bxpv@suppress@compress\relax
   \global\let\bxpv@suppress@obj@compress\relax
+  \global\let\bxpv@check@version\relax
   \global\let\bxpv@set@version\relax
   \global\let\bxpv@set@decimaldigits\relax
   %\global\let\bxpv@set@pkresolution\relax
@@ -331,7 +354,12 @@
 \newcommand*\setpdfversion[1]{%
   \edef\bxpv@version{#1}%
   \bxpv@set@version@values
-  \bxpv@set@version
+  \bxpv@check@version
+  \ifbxpv@ok
+    \bxpv@set@version
+  \else
+    \bxpv@fail@nafea{Cannot set PDF version to '\bxpv@version'}%
+  \fi
 }
 
 %%<*> \setpdfdecimaldigits{<number>}
@@ -366,6 +394,13 @@
 % will impose. It is a number constant, or \relax.
 \@ifdefinable{\bxpdfverMinorVersion}{%
   \let\bxpdfverMinorVersion\relax
+}
+
+%%<+> \bxpdfverMajorVersion
+% The PDF major version (eg. '1' for 1.4) that this package
+% will impose. It is a number constant, or \relax.
+\@ifdefinable{\bxpdfverMajorVersion}{%
+  \let\bxpdfverMajorVersion\relax
 }
 
 %%<+> \bxpdfverDecimalDigits
@@ -425,43 +460,52 @@
 \let\bxpv@mversion\relax  % minor version (temporary)
 
 %% \bxpv@set@version@values
-% Sets \bxpdfverMinorVersion.
+% Sets \bxpdfverMinorVersion/\bxpdfverMajorVersion.
 \@onlypreamble\bxpv@set@version@values
 \def\bxpv@set@version@values{%
   \edef\bxpv@version{\bxpv@version}%
+  \let\bxpv@tmpc\bxpv@version
   \ifx\bxpv@version\@empty
     \global\let\bxpdfverMinorVersion\relax % unset
+    \global\let\bxpdfverMajorVersion\relax % unset
   \else
-    \let\bxpv@mversion\relax
-    \@tfor\bxpv@x:=456789\do{%
-      \edef\bxpv@tmpa{1.\bxpv@x}%
+    \bxpv@okfalse
+    \@for\bxpv@tmpa:=\bxpv@valid@versions\do{%
       \ifx\bxpv@version\bxpv@tmpa
-        \chardef\bxpv@mversion=\bxpv@x\relax
+        \bxpv@oktrue
       \fi
     }%
-    \ifx\bxpv@mversion\relax
+    \ifbxpv@ok\else
       \bxpv@check@file@version
+      \ifx\bxpv@version\relax
+        \bxpv@okfalse
+      \else
+        \bxpv@oktrue
+        \PackageInfo\bxpv@pkgname
+         {Output PDF version is set to \bxpv@version\MessageBreak}%
+      \fi
     \fi
-    \ifx\bxpv@mversion\relax
+    \ifbxpv@ok
+      \expandafter\bxpv@set@version@values@a\bxpv@version\relax
+    \else
       \PackageError\bxpv@pkgname
        {Invalid value given for PDF version\MessageBreak
-        (value=\bxpv@version)}{%
-        PDF version must be either 1.4, 1.5, ..., 1.9, or\MessageBreak
+        (value=\bxpv@tmpc)}{%
+        PDF version must be either one of the following:\MessageBreak
+        \@spaces \bxpv@valid@versions;\MessageBreak
         or the name of a PDF file from which the version is pulled.%
         \MessageBreak\@ehc}%
-    \else
-      \PackageInfo\bxpv@pkgname
-       {Output PDF version is set to 1.\the\bxpv@mversion
-        \MessageBreak}%
-      \global\let\bxpdfverMinorVersion\bxpv@mversion
     \fi
   \fi
+}
+\def\bxpv@set@version@values@a#1.#2\relax{%
+  \global\chardef\bxpdfverMinorVersion=#2\relax
+  \global\chardef\bxpdfverMajorVersion=#1\relax
 }
 
 %% \bxpv@check@file@version
 \@onlypreamble\bxpv@check@file@version
 \def\bxpv@check@file@version{%
-  \let\bxpv@mversion\relax
   \expandafter\bxpv@check@file@version@a\bxpv@version\bxpv@end
 }
 \@onlypreamble\bxpv@check@file@version@a
@@ -471,6 +515,7 @@
     \lowercase{\def\noexpand\filename@ext{\filename@ext}}%
   }\bxpv@next
   \def\bxpv@tmpb{pdf}%
+  \let\bxpv@version\relax
   \ifx\filename@ext\bxpv@tmpb
     \global\let\bxpv@gtmpa\relax
     \bxpv@read@file{#1}{%
@@ -481,9 +526,9 @@
       \PackageWarning\bxpv@pkgname
        {File '#1' not found}%
     \fi
-    \@tfor\bxpv@x:=456789\do{%
-      \ifx\bxpv@x\bxpv@gtmpa
-        \chardef\bxpv@mversion=\bxpv@x\relax
+    \@for\bxpv@tmpa:=\bxpv@valid@versions\do{%
+      \ifx\bxpv@gtmpa\bxpv@tmpa
+        \let\bxpv@version\bxpv@tmpa
       \fi
     }%
   \fi
@@ -507,7 +552,7 @@
       \gdef\bxpv@gtmpa{##1}%
     }%
   }
-  \edef\bxpv@tmpb{{\expandafter\string\csname\string\%PDF-1.\endcsname}}%
+  \edef\bxpv@tmpb{{\expandafter\string\csname\string\%PDF-\endcsname}}%
   \expandafter\bxpv@tmpa\bxpv@tmpb\bxpv@end
 \endgroup
 
@@ -537,10 +582,26 @@
 \@onlypreamble\bxpv@begin@document@dvipdfmx
 \def\bxpv@begin@document@dvipdfmx{%
   % PDF version
-  \ifx\bxpdfverMinorVersion\relax\else
-    \g@addto@macro\bxpv@page@specials{%
-      \special{pdf:minorversion \the\bxpdfverMinorVersion}%
-    }%
+  \ifx\bxpdfverMajorVersion\tw@
+    \bxpv@check@dvipdfmx@version{20180217}%
+     {Cannot set PDF major version}%
+  \else
+    \bxpv@oktrue
+  \fi
+  \ifbxpv@ok
+    \ifx\bxpdfverMinorVersion\relax\else
+      \g@addto@macro\bxpv@page@specials{%
+        \special{pdf:minorversion \the\bxpdfverMinorVersion}%
+      }%
+    \fi
+    \ifx\bxpdfverMinorVersion\relax\else
+      \bxpv@cache@fetch{dvipdfmxver}%
+      \ifnum\bxpv@cache@@dvipdfmxver<20180217 \else
+        \g@addto@macro\bxpv@page@specials{%
+          \special{pdf:majorversion \the\bxpdfverMajorVersion}%
+        }%
+      \fi
+    \fi
   \fi
   % compression
   \ifbxpdfverCompressionSuppressed
@@ -812,6 +873,7 @@
       \chardef\bxpv@rf@cont\@ne
       \bxpv@read@file@b
     \fi
+    \closein\@inputcheck
   \endgroup
 }
 \@onlypreamble\bxpv@read@file@b
@@ -894,11 +956,13 @@
     \def\next#1{\expandafter\meaning\csname if#1\endcsname}%
     \typeout{**bxpdfver-----------%
       ^^JMinorVersion=\meaning\bxpdfverMinorVersion
+      ^^JMajorVersion=\meaning\bxpdfverMajorVersion
       ^^JCompressionSuppressed=\next{bxpdfverCompressionSuppressed}%
       ^^JObjCompressionSuppressed=\next{bxpdfverObjCompressionSuppressed}%
       ^^JDecimalDigits=\meaning\bxpdfverDecimalDigits
       ^^JPkResolution=\meaning\bxpdfverPkResolution
       \do minorversion=\bxpv@@minorversion
+      \do majorversion=\bxpv@@majorversion
       \do compresslevel=\bxpv@@compresslevel
       \do objcompresslevel=\bxpv@@objcompresslevel
       \do decimaldigits=\bxpv@@decimaldigits
