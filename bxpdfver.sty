@@ -2,7 +2,7 @@
 
 %% package declaration
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{bxpdfver}[2017/02/11 v0.4]
+\ProvidesPackage{bxpdfver}[2020/04/19 v0.5-pre]
 \def\bxpv@pkgname{bxpdfver}
 
 %% preparations
@@ -130,6 +130,12 @@
     the engine/driver does not support the feature}%
 }
 
+%% \ifbxpv@defined
+\let\ifbxpv@defined\ifdefined
+\ifx\ifbxpv@defined\@undefined \expandafter\@firstofone
+\else \expandafter\@gobble
+\fi{\let\ifbxpv@defined\iffalse}
+
 %--------------------------------------- internal dispatchers
 
 %% \bxpv@suppress@compress
@@ -214,13 +220,13 @@
     \protected\xdef\bxpv@@pkresolution{\pdfvariable pkresolution}%
   }%
   % If \pdfcompresslevel is available, use it.
-  \ifx\bxpv@@compresslevel\@undefined\else
+  \ifbxpv@defined\bxpv@@compresslevel
     \gdef\bxpv@suppress@compress{%
       \global\bxpv@@compresslevel\z@
     }%
   \fi
   % If \pdfobjcompresslevel is available, use it.
-  \ifx\bxpv@@objcompresslevel\@undefined\else
+  \ifbxpv@defined\bxpv@@objcompresslevel
     \global\chardef\bxpv@org@objcompresslevel\bxpv@@objcompresslevel
     \gdef\bxpv@suppress@obj@compress{%
       \global\bxpv@@objcompresslevel\z@
@@ -228,7 +234,7 @@
     \global\let\bxpv@cancel@obj@compress\bxpv@suppress@obj@compress
   \fi
   % If \pdfminorversion is available, use it.
-  \ifx\bxpv@@minorversion\@undefined\else
+  \ifbxpv@defined\bxpv@@minorversion
     \global\chardef\bxpv@org@minorversion\bxpv@@minorversion
     \gdef\bxpv@set@version{%
       \ifx\bxpdfverMinorVersion\relax
@@ -244,7 +250,7 @@
     }%
   \fi
   % If \pdfdecimaldigits is available, use it.
-  \ifx\bxpv@@decimaldigits\@undefined\else
+  \ifbxpv@defined\bxpv@@decimaldigits
     \global\chardef\bxpv@org@decimaldigits\bxpv@@decimaldigits
     \gdef\bxpv@set@decimaldigits{%
       \ifx\bxpdfverDecimalDigits\relax
@@ -255,7 +261,7 @@
     }%
   \fi
   % If \pdfpkresolution is available, use it.
-  \ifx\bxpv@@pkresolution\@undefined\else
+  \ifbxpv@defined\bxpv@@pkresolution
     \global\mathchardef\bxpv@org@pkresolution\bxpv@@pkresolution
     \gdef\bxpv@set@pkresolution{%
       \ifx\bxpdfverPkResolution\relax
