@@ -20,6 +20,7 @@
 \let\bxpv@compress=t      % use compression?
 \let\bxpv@obj@compress=t  % use object stream?
 \chardef\bxpv@infolevel=2 % info-log level
+\let\bxpv@new@dvipdfmx=f  % assume new dvipdfmx?
 
 %% \bxpv@valid@versions
 \def\bxpv@valid@versions{1.4,1.5,1.6,1.7,2.0}
@@ -72,6 +73,11 @@
 \DeclareOption{nodvidriver}{%
   \let\bxpv@drv@type=0%
   \def\bxpv@drv@name{nodvidriver}%
+}
+\DeclareOption{new-dvipdfmx}{%
+  \let\bxpv@drv@type=d%
+  \let\bxpv@new@dvipdfmx=t%
+  \def\bxpv@drv@name{dvipdfmx}%
 }
 % (other)
 \DeclareOption{lenient}{%
@@ -981,6 +987,9 @@
 \fi
 \if t\bxpv@obj@compress\else
   \suppresspdfobjcompression
+\fi
+\if t\bxpv@new@dvipdfmx
+  \bxpv@cache@store{dvipdfmxver}{99999999}
 \fi
 
 %--------------------------------------- all done
