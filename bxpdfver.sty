@@ -330,7 +330,7 @@
 \@onlypreamble\setpdfversion
 \newcommand*\setpdfversion[1]{%
   \edef\bxpv@version{#1}%
-  \bxpv@get@mversion
+  \bxpv@set@version@values
   \bxpv@set@version
 }
 
@@ -424,10 +424,10 @@
 %% variables
 \let\bxpv@mversion\relax  % minor version (temporary)
 
-%% \bxpv@get@mversion
+%% \bxpv@set@version@values
 % Sets \bxpdfverMinorVersion.
-\@onlypreamble\bxpv@get@mversion
-\def\bxpv@get@mversion{%
+\@onlypreamble\bxpv@set@version@values
+\def\bxpv@set@version@values{%
   \edef\bxpv@version{\bxpv@version}%
   \ifx\bxpv@version\@empty
     \global\let\bxpdfverMinorVersion\relax % unset
@@ -440,7 +440,7 @@
       \fi
     }%
     \ifx\bxpv@mversion\relax
-      \bxpv@file@mversion
+      \bxpv@check@file@version
     \fi
     \ifx\bxpv@mversion\relax
       \PackageError\bxpv@pkgname
@@ -458,14 +458,14 @@
   \fi
 }
 
-%% \bxpv@file@mversion
-\@onlypreamble\bxpv@file@mversion
-\def\bxpv@file@mversion{%
+%% \bxpv@check@file@version
+\@onlypreamble\bxpv@check@file@version
+\def\bxpv@check@file@version{%
   \let\bxpv@mversion\relax
-  \expandafter\bxpv@file@mversion@a\bxpv@version\bxpv@end
+  \expandafter\bxpv@check@file@version@a\bxpv@version\bxpv@end
 }
-\@onlypreamble\bxpv@file@mversion@a
-\def\bxpv@file@mversion@a#1\bxpv@end{%
+\@onlypreamble\bxpv@check@file@version@a
+\def\bxpv@check@file@version@a#1\bxpv@end{%
   \filename@parse{#1}%
   \edef\bxpv@next{%
     \lowercase{\def\noexpand\filename@ext{\filename@ext}}%
@@ -474,7 +474,7 @@
   \ifx\filename@ext\bxpv@tmpb
     \global\let\bxpv@gtmpa\relax
     \bxpv@read@file{#1}{%
-      \bxpv@file@mversion@xa{##1 }%
+      \bxpv@check@file@version@xa{##1 }%
       \bxpv@read@file@finish
     }%
     \ifbxpv@read@file@ok\else
@@ -489,21 +489,21 @@
   \fi
 }
 % some more subprocedures
-\@onlypreamble\bxpv@file@mversion@xa
-\@onlypreamble\bxpv@file@mversion@xb
-\@onlypreamble\bxpv@file@mversion@xc
+\@onlypreamble\bxpv@check@file@version@xa
+\@onlypreamble\bxpv@check@file@version@xb
+\@onlypreamble\bxpv@check@file@version@xc
 \begingroup
   \escapechar\m@ne
   \def\bxpv@tmpa#1\bxpv@end{%
-    \gdef\bxpv@file@mversion@xa##1{%
-      \bxpv@file@mversion@xb##1#1\bxpv@end
+    \gdef\bxpv@check@file@version@xa##1{%
+      \bxpv@check@file@version@xb##1#1\bxpv@end
     }%
-    \gdef\bxpv@file@mversion@xb##1#1##2\bxpv@end{%
+    \gdef\bxpv@check@file@version@xb##1#1##2\bxpv@end{%
       \ifx\bxpv@mt##1\bxpv@mt
-        \bxpv@file@mversion@xc##2\bxpv@end
+        \bxpv@check@file@version@xc##2\bxpv@end
       \fi
     }%
-    \gdef\bxpv@file@mversion@xc##1 ##2\bxpv@end{%
+    \gdef\bxpv@check@file@version@xc##1 ##2\bxpv@end{%
       \gdef\bxpv@gtmpa{##1}%
     }%
   }
