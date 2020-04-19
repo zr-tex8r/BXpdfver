@@ -37,7 +37,7 @@ bxpdfver package
 
 The available options are:
 
-  * `1.4`, `1.5`, `1.6`, or `1.7`: Sets PDF version.
+  * `1.4`, `1.5`, `1.6`, `1.7` or `2.0`: Sets PDF version.
   * `nocompress`: Suppresses stream compression.
   * `compress` (default): Does not suppress stream compression.
   * `noobjcompress`: Suppresses use of object streams.
@@ -57,7 +57,7 @@ when it is already suppressed by other means.
 
   * `\setpdfversion{<version>}`: Sets PDF version.
     Here `<version>` is either one of the following:
-      + `1.4`, `1.5`, `1.6`, or `1.7`; the version itself.
+      + `1.4`, `1.5`, `1.6`, `1.7` or `2.0`; the version itself.
       + the name of a PDF file; the version is set equal to that of
         the given file.
   * `\suppresspdfcompression`: Suppresses stream compression.
@@ -101,6 +101,8 @@ More notices:
 REVISION HISTORY
 ----------------
 
+  * Version 0.5  ‹2020/04/19›
+      - Suuport PDF version value `2.0`.
   * Version 0.4  ‹2017/02/11›
       - Add `\setpdfdecimaldigits` and `\preservepdfdestinations`.
   * Version 0.3  ‹2016/08/11›
