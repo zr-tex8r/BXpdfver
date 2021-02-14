@@ -46,7 +46,7 @@ The available options are:
       + When using a PDF-output engine, you need not give driver options
         since the appropriate one is auto-detected.
       + `dvipdfmx`: Uses dvipdfmx driver.
-      + `disabled`/`nodvidriver`: Disables all functions of the package.
+      + `nodvidriver`/`disabled`: Disables all functions of the package.
   * `lenient`: Turns the errors for unsupported features into warnings.
 
 Note that the options `compress` and `objcompress` mean that this
@@ -95,12 +95,14 @@ More notices:
   * The package recognizes some “unsupported” driver options such as
     `dvips`; when such drivers are used, use of any feature will cause
     an error.
-  * When `disabled` is used, use of any feature will do nothing (nor
+  * When `nodvidriver` is used, use of any feature will do nothing (nor
     issue an error).
 
 REVISION HISTORY
 ----------------
 
+  * Version 0.5a ‹2021/02/14›
+      - Adjustment for the new version of hyperref.
   * Version 0.5  ‹2020/04/19›
       - Suuport PDF version value `2.0`.
   * Version 0.4  ‹2017/02/11›
