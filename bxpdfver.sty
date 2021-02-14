@@ -189,6 +189,9 @@
 \@onlypreamble\bxpv@begin@document@hook
 \let\bxpv@begin@document@hook\@empty
 \AtBeginDocument{\bxpv@begin@document@hook}
+\g@addto@macro\bxpv@begin@document@hook{%
+  \bxpv@check@hyperref % must come first
+}
 
 %% 'disabled' driver
 \if 0\bxpv@drv@type
@@ -366,6 +369,13 @@
   \bxpv@suppress@obj@compress
   \global\bxpdfverObjCompressionSuppressedtrue
 }
+
+% Note: Priority against hyperref's 'pdfversion' parameter
+% The existing behaviors on PDF mode should be preserved:
+% - If hyperref is loaded but 'pdfversion' is not given, then
+%   bxpdfver's setting (explicit request) should win.
+% - If hyperref is loaded and 'pdfversion' is given, then
+%   hyperref should win (with a warning).
 
 %%<*> \setpdfversion{<version>}
 \@onlypreamble\setpdfversion
@@ -573,6 +583,30 @@
   \edef\bxpv@tmpb{{\expandafter\string\csname\string\%PDF-\endcsname}}%
   \expandafter\bxpv@tmpa\bxpv@tmpb\bxpv@end
 \endgroup
+
+%% \bxpv@check@hyperref
+\def\bxpv@check@hyperref{%
+  \bxpv@oktrue
+  \ifx\bxpdfverMinorVersion\relax\else
+    \@ifpackageloaded{hyperref}{%
+      \expandafter\ifx\csname ifHy@setpdfversion\expandafter
+          \endcsname\csname iftrue\endcsname
+        \bxpv@okfalse
+      \fi
+    }{}%
+  \fi
+  \ifbxpv@ok\else
+    \PackageWarningNoLine\bxpv@pkgname
+     {Both hyperref and this package try to set the PDF\MessageBreak
+      version; this can cause problems. This package's\MessageBreak
+      setting will be withdrawn for now, but you must\MessageBreak
+      fix your source to avoid it}%
+    % Note: In PDF mode, the real parameters will be overwritten
+    % later by hyperref.
+    \let\bxpdfverMinorVersion\relax
+    \let\bxpdfverMajorVersion\relax
+  \fi
+}
 
 %--------------------------------------- dvipdfmx something
 \ifx d\bxpv@drv@type % 'dvipdfmx'
