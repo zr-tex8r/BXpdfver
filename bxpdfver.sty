@@ -140,6 +140,10 @@
 \else \expandafter\@gobble
 \fi{\let\ifbxpv@defined\iffalse}
 
+%% \ifbxpv@old@hook@system
+\newif\ifbxpv@old@hook@system
+\@ifl@t@r\fmtversion{2020/10/01}{}{\bxpv@old@hook@systemtrue}
+
 %--------------------------------------- internal dispatchers
 
 %% \bxpv@suppress@compress
@@ -574,7 +578,9 @@
 \ifx d\bxpv@drv@type % 'dvipdfmx'
 
 %% required packages
+\ifbxpv@old@hook@system
 \RequirePackage{atbegshi}[2007/04/19]% v1.2
+\fi
 
 %% variables
 \let\bxpv@C@value\relax
@@ -667,6 +673,7 @@
   % special added to every page
   \ifx\bxpv@page@specials\@empty\else
     \edef\bxpv@page@specials{\bxpv@page@specials}%
+    \ifbxpv@old@hook@system
     \AtBeginShipout{%
       \setbox\AtBeginShipoutBox=\vbox{%
         \baselineskip\z@skip\lineskip\z@skip\lineskiplimit\z@
@@ -674,6 +681,10 @@
         \copy\AtBeginShipoutBox
       }%
     }%
+    \else
+      \AddToHook{shipout/foreground}{%
+        \hb@xt@\z@{\bxpv@page@specials\hss}}%
+    \fi
   \fi
 }
 
