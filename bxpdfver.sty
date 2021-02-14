@@ -10,7 +10,7 @@
 
 %% package declaration
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{bxpdfver}[2020/04/19 v0.5]
+\ProvidesPackage{bxpdfver}[2020/04/19 v0.6-pre]
 \def\bxpv@pkgname{bxpdfver}
 
 %% preparations
@@ -604,16 +604,12 @@
   \fi
   \ifbxpv@ok
     \ifx\bxpdfverMinorVersion\relax\else
-      \g@addto@macro\bxpv@page@specials{%
-        \special{pdf:minorversion \the\bxpdfverMinorVersion}%
-      }%
+      \bxpv@put@special{pdf:minorversion \the\bxpdfverMinorVersion}%
     \fi
     \ifx\bxpdfverMinorVersion\relax\else
       \bxpv@cache@fetch{dvipdfmxver}%
       \ifnum\bxpv@cache@@dvipdfmxver<20180217 \else
-        \g@addto@macro\bxpv@page@specials{%
-          \special{pdf:majorversion \the\bxpdfverMajorVersion}%
-        }%
+        \bxpv@put@special{pdf:majorversion \the\bxpdfverMajorVersion}%
       \fi
     \fi
   \fi
@@ -623,9 +619,7 @@
      {Cannot suppress compression}%
     \ifbxpv@ok
       % New dvipdfmx supports this special.
-      \g@addto@macro\bxpv@page@specials{%
-        \special{dvipdfmx:config z 0}%
-      }%
+      \bxpv@put@special{dvipdfmx:config z 0}%
     \fi
   \fi
   % object compression
