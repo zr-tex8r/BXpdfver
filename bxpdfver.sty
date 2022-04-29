@@ -27,7 +27,7 @@
 \let\bxpv@version\relax   % version value (eg. 1.4)
 \let\bxpv@compress=t      % use compression?
 \let\bxpv@obj@compress=t  % use object stream?
-\chardef\bxpv@infolevel=2 % info-log level
+\let\bxpv@infolevel\relax % info-log level
 \let\bxpv@new@dvipdfmx=f  % assume new dvipdfmx?
 
 %% \bxpv@valid@versions
@@ -91,9 +91,27 @@
 \DeclareOption{lenient}{%
   \chardef\bxpv@infolevel=1
 }
+\DeclareOption{nolenient}{%
+  \chardef\bxpv@infolevel=2
+}
+\DeclareOption{lenient+}{%
+  \chardef\bxpv@infolevel=0
+}
+\DeclareOption{nolenient+}{%
+  \chardef\bxpv@infolevel=2
+}
 
 %% process
 \ProcessOptions*
+
+%% default infolevel value
+\ifx\bxpv@infolevel\relax
+  \if 0\bxpv@drv@type
+    \chardef\bxpv@infolevel=0 %'lenient+'
+  \else
+    \chardef\bxpv@infolevel=2 %'nolenient'
+  \fi
+\fi
 
 %--------------------------------------- helpers
 
@@ -113,6 +131,17 @@
 }
 \def\bxpv@detokenize@a#1>#2\bxpv@end#3{%
   \def#3{#2}%
+}
+
+%% \bxpv@warn{<message>}
+% Issues a warning.
+\@onlypreamble\bxpv@warn
+\def\bxpv@warn#1{%
+  \ifcase\bxpv@infolevel % info when lenient+
+    \PackageInfo\bxpv@pkgname{#1\@gobble}%
+  \else % warn otherwise
+    \PackageWarningNoLine\bxpv@pkgname{#1}%
+  \fi
 }
 
 %% \bxpv@fail{<message>}
@@ -192,11 +221,6 @@
 \g@addto@macro\bxpv@begin@document@hook{%
   \bxpv@check@hyperref % must come first
 }
-
-%% 'disabled' driver
-\if 0\bxpv@drv@type
-  \chardef\bxpv@infolevel=0
-\fi
 
 %% adjust internal dispatchers
 \ifx 0\bxpv@drv@type\else               %--------
@@ -324,13 +348,19 @@
   \bxpv@check@prim\XeTeXversion{%
     \global\let\bxpv@drv@type=d%
   }
+  % strange engines
+  \bxpv@check@prim\HINTversion{%
+    \global\let\bxpv@drv@type=X%
+  }
 \fi
 
 %% when in DVI mode
 \if x\bxpv@drv@type % 'bad' driver
-  \bxpv@fail{Unsupported driver '\bxpv@drv@name'}%
-  % no further errors
-  \global\chardef\bxpv@infolevel=0
+  \bxpv@warn
+   {Unsupported driver '\bxpv@drv@name'}%
+\else\if X\bxpv@drv@type % strange engine
+  \bxpv@warn
+   {Unsupported engine}%
 \else\if d\bxpv@drv@type % 'dvipdfmx'
   \global\let\bxpv@suppress@compress\relax
   \global\let\bxpv@suppress@obj@compress\relax
@@ -349,7 +379,7 @@
   \bxpv@fail
    {No driver option is given}%
   \global\chardef\bxpv@infolevel=0
-\fi\fi\fi
+\fi\fi\fi\fi
 
 \endgroup
 \fi                                     %--------
