@@ -28,6 +28,7 @@ settings on the PDF document to output:
 
 This package is distributed under the MIT license.
 
+
 bxpdfver package
 ----------------
 
@@ -46,11 +47,14 @@ The available options are:
       + When using a PDF-output engine, you need not give driver options
         since the appropriate one is auto-detected.
       + `dvipdfmx`: Uses dvipdfmx driver.
-      + `nodvidriver`/`disabled`: Disables all functions of the package.
+      + `nodvidriver`/`disabled`: Disables all functions of the package.  
+        NB. This option sets `lenient+` by default.
   * `lenient`: Turns the errors for unsupported features into warnings.
+  * `lenient+`: Suppreseses the errors for unsupported features.
+  * `nolenient`: Negation of `lenient(+)`.
 
 Note that the options `compress` and `objcompress` mean that this
-package *does not suppress* a feature. They do not activate a feature
+package *does not suppress* a feature. They do not reactivate a feature
 when it is already suppressed by other means.
 
 ### USAGE
@@ -66,7 +70,7 @@ when it is already suppressed by other means.
     of digits after decimal points) of the decimal numbers that appear
     in PDF command sequences.
   * `\preservepdfdestinations`: Stops shortening the PDF destination
-    names and uses the original names given in the TeX documents. This
+    names and uses the original names given in the LaTeX documents. This
     is necessary for cross-document links to work correctly.
 
 ### NOTE ON DRIVERS
@@ -95,12 +99,15 @@ More notices:
   * The package recognizes some “unsupported” driver options such as
     `dvips`; when such drivers are used, use of any feature will cause
     an error.
-  * When `nodvidriver` is used, use of any feature will do nothing (nor
-    issue an error).
+  * The use of `nodvidriver` sets `lenient*` by default; use of any
+    feature will do nothing (nor issue an error).
+
 
 REVISION HISTORY
 ----------------
 
+  * Version 0.6  ‹2022/04/28›
+      - Added the `lenient+` and `nolenient` options.
   * Version 0.5a ‹2021/02/14›
       - Adjustment for the new version of hyperref.
   * Version 0.5  ‹2020/04/19›
