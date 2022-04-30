@@ -29,6 +29,7 @@
 \let\bxpv@obj@compress=t  % use object stream?
 \let\bxpv@infolevel\relax % info-log level
 \let\bxpv@new@dvipdfmx=f  % assume new dvipdfmx?
+\let\bxpv@ignore@pdfmanagement=f
 
 %% \bxpv@valid@versions
 \def\bxpv@valid@versions{1.4,1.5,1.6,1.7,2.0}
@@ -103,6 +104,12 @@
 }
 \DeclareOption{nolenient+}{%
   \chardef\bxpv@infolevel=2
+}
+\DeclareOption{ignorepdfmanagement}{%
+  \let\bxpv@ignore@pdfmanagement=t
+}
+\DeclareOption{noignorepdfmanagement}{%
+  \let\bxpv@ignore@pdfmanagement=f
 }
 
 %% process
@@ -226,6 +233,15 @@
   \bxpv@check@hyperref % must come first
 }
 
+%% check for new PDF management
+\if t\bxpv@ignore@pdfmanagement\else
+  \ifx\IfPDFManagementActiveTF\@undefined\else
+    \IfPDFManagementActiveTF{%
+      \global\let\bxpv@drv@type=m%
+    }{}
+  \fi
+\fi
+
 %% adjust internal dispatchers
 \ifx 0\bxpv@drv@type\else               %--------
 \begingroup
@@ -246,8 +262,13 @@
 \bxpv@check@prim\outputmode{\chardef\bxpv@pdfoutput\outputmode}
 \bxpv@check@prim\ngbanner{\chardef\bxpv@pdfoutput\@ne}
 
-%% when in PDF mode
-\ifnum\bxpv@pdfoutput>\z@
+%% switch
+\if m\bxpv@drv@type
+  %% when in new PDF management
+  \bxpv@warn
+   {New PDF management is active}%
+\else\ifnum\bxpv@pdfoutput>\z@
+  %% when in PDF mode
   \global\let\bxpv@drv@type=p
   \global\let\bxpv@@compresslevel\pdfcompresslevel
   \global\let\bxpv@@objcompresslevel\pdfobjcompresslevel
@@ -348,6 +369,7 @@
     \global\let\bxpv@preserve@destinations\relax
   \fi
 \else
+  %% when in DVI mode
   % XeTeX should do just as dvipdfmx.
   \bxpv@check@prim\XeTeXversion{%
     \global\let\bxpv@drv@type=d%
@@ -356,9 +378,7 @@
   \bxpv@check@prim\HINTversion{%
     \global\let\bxpv@drv@type=X%
   }
-\fi
-
-%% when in DVI mode
+\fi\fi
 \if x\bxpv@drv@type % 'bad' driver
   \bxpv@warn
    {Unsupported driver '\bxpv@drv@name'}%
