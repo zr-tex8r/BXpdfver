@@ -82,6 +82,10 @@
   \let\bxpv@drv@type=0%
   \def\bxpv@drv@name{nodvidriver}%
 }
+\DeclareOption{resetdvidriver}{%
+  \let\bxpv@drv@type\relax
+  \let\bxpv@drv@name\relax
+}
 \DeclareOption{new-dvipdfmx}{%
   \let\bxpv@drv@type=d%
   \let\bxpv@new@dvipdfmx=t%
