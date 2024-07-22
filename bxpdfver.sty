@@ -396,7 +396,7 @@
   \global\let\bxpv@check@version\relax
   \global\let\bxpv@set@version\relax
   \global\let\bxpv@set@decimaldigits\relax
-  %\global\let\bxpv@set@pkresolution\relax
+  \global\let\bxpv@set@pkresolution\relax
   \global\let\bxpv@preserve@destinations\relax
   \g@addto@macro\bxpv@begin@document@hook{%
     \bxpv@begin@document@dvipdfmx
@@ -739,7 +739,9 @@
   \fi
   % PK resolution
   \ifx\bxpdfverPkResolution\relax\else
-    \iffalse % This will never work....
+    \bxpv@check@dvipdfmx@version{20211016}%
+     {Cannot set PK resolution}%
+    \ifbxpv@ok
       \bxpv@put@special{dvipdfmx:config r \the\bxpdfverPkResolution}%
     \fi
   \fi
