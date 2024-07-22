@@ -175,16 +175,19 @@
 }
 
 %% \ifbxpv@defined
-\let\ifbxpv@defined\ifdefined
-\ifx\ifbxpv@defined\@undefined \expandafter\@firstofone
-\else \expandafter\@gobble
-\fi{\let\ifbxpv@defined\iffalse}
+% Identical to \ifdefined, and is used only in e-TeX-aware code.
+% On non-e-TeX engines it is made \iffalse to keep \if-balancedness.
+\bxpv@csletcs{ifbxpv@defined}{%
+    if\ifx\ifdefined\@undefined false\else defined\fi}
 
 %% \ifbxpv@old@hook@system
 \newif\ifbxpv@old@hook@system
 \@ifl@t@r\fmtversion{2020/10/01}{}{\bxpv@old@hook@systemtrue}
 
 %--------------------------------------- internal dispatchers
+
+% Initially all dispatchers are "unavailable".
+% They are later redefined according to the driver type.
 
 %% \bxpv@suppress@compress
 \@onlypreamble\bxpv@suppress@compress
@@ -242,7 +245,7 @@
   \fi
 \fi
 
-%% adjust internal dispatchers
+%% Redefine internal dispatchers.
 \ifx 0\bxpv@drv@type\else               %--------
 \begingroup
 
@@ -386,6 +389,8 @@
   \bxpv@warn
    {Unsupported engine}%
 \else\if d\bxpv@drv@type % 'dvipdfmx'
+  % All the real settings are done in the begin-document hook,
+  % so the dispatchers themselves will do nothing (if available).
   \global\let\bxpv@suppress@compress\relax
   \global\let\bxpv@suppress@obj@compress\relax
   \global\let\bxpv@check@version\relax
