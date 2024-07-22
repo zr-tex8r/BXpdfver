@@ -764,10 +764,9 @@
   \fi
   % C option value
   \ifx\bxpv@C@bits\@empty\else
-    \bxpv@cache@fetch{dvipdfmxcfg}%
-    \def\bxpv@next##1##2\bxpv@mk{\def\bxpv@C@value{##1}}%
-    \expandafter\bxpv@next\bxpv@cache@@dvipdfmxcfg{0}\bxpv@mk
-    \bxpv@rc@bitset{\bxpv@C@value}{64}%
+    % When C option is used, its value is automatically OR'ed with
+    % the current value, so we need read the config for that.
+    \def\bxpv@C@value{0}%
     \def\do##1{%
       \bxpv@rc@bitset{\bxpv@C@value}{##1}%
       \let\bxpv@C@value\bxpv@rc@num}%
