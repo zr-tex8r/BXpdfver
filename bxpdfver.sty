@@ -144,6 +144,13 @@
   \def#3{#2}%
 }
 
+%% \bxpv@info{<message>}
+% Issues an info message.
+\@onlypreamble\bxpv@info
+\def\bxpv@info#1{%
+  \PackageInfo\bxpv@pkgname{#1\@gobble}%
+}
+
 %% \bxpv@warn{<message>}
 % Issues a warning.
 \@onlypreamble\bxpv@warn
@@ -676,6 +683,7 @@
 \fi
 
 %% variables
+\let\bxpv@dvipdfmx@known@min\relax
 \let\bxpv@C@value\relax
 
 %% \bxpv@C@bits
@@ -694,6 +702,7 @@
 %% \bxpv@begin@document@dvipdfmx
 \@onlypreamble\bxpv@begin@document@dvipdfmx
 \def\bxpv@begin@document@dvipdfmx{%
+  \bxpv@get@dvipdfmx@known@min
   % PDF version
   \ifx\bxpdfverMajorVersion\tw@
     \bxpv@check@dvipdfmx@version{20180217}%
@@ -706,8 +715,8 @@
       \bxpv@put@special{pdf:minorversion \the\bxpdfverMinorVersion}%
     \fi
     \ifx\bxpdfverMinorVersion\relax\else
-      \bxpv@cache@fetch{dvipdfmxver}%
-      \ifnum\bxpv@cache@@dvipdfmxver<20180217 \else
+      \bxpv@at@least@dvipdfmx@version{20180217}%
+      \ifbxpv@ok
         \bxpv@put@special{pdf:majorversion \the\bxpdfverMajorVersion}%
       \fi
     \fi
@@ -783,25 +792,58 @@
   \fi
 }
 
+%% \bxpv@get@dvipdfmx@known@min
+\@onlypreamble\bxpv@get@dvipdfmx@known@min
+\def\bxpv@get@dvipdfmx@known@min{%
+  \def\bxpv@dvipdfmx@known@min{0}%
+  \def\bxpv@tmpa{def}%
+  \let\bxpv@tmpb\@gobbletwo
+  \@ifl@aded\bxpv@tmpa{l3backend-dvipdfmx}{%
+    \def\bxpv@tmpb{\@ifl@ter\bxpv@tmpa{l3backend-dvipdfmx}}%
+  }{}%
+  \@ifl@aded\bxpv@tmpa{l3backend-dvips}{%
+    \def\bxpv@tmpb{\@ifl@ter\bxpv@tmpa{l3backend-dvips}}%
+  }{}%
+  \bxpv@tmpb{2022/04/10}{%
+    \def\bxpv@dvipdfmx@known@min{20201111}%
+  }{}%
+  \bxDebug{dvipdfmx-known-min:\bxpv@dvipdfmx@known@min}%
+}
+
+%% \bxpv@at@least@dvipdfmx@version{<version>}
+% Checks if dvipdfmx >= <version> and sets bxpv@ok.
+\@onlypreamble\bxpv@at@least@dvipdfmx@version
+\def\bxpv@at@least@dvipdfmx@version#1{%
+  % first check using known-min
+  \ifnum\bxpv@dvipdfmx@known@min<#1
+    % get real version
+    \bxpv@cache@fetch{dvipdfmxver}%
+    \bxpv@info
+     {dvipdfmx version is \bxpv@cache@@dvipdfmxver}%
+    \bxpv@oktrue
+    \ifnum\bxpv@cache@@dvipdfmxver<#1
+      \bxpv@okfalse
+    \fi
+  \else % new enough
+    \bxpv@oktrue
+  \fi
+}
+
 %% \bxpv@check@dvipdfmx@version
 \@onlypreamble\bxpv@check@dvipdfmx@version
 \def\bxpv@check@dvipdfmx@version#1#2{%
-  \bxpv@cache@fetch{dvipdfmxver}%
-  \bxpv@okfalse
-  \ifnum\bxpv@cache@@dvipdfmxver=\z@
+  \bxpv@at@least@dvipdfmx@version{#1}%
+  \ifbxpv@ok % no-op
+  \else\ifnum\bxpv@cache@@dvipdfmxver=\z@
     \bxpv@fail
      {#2, because the\MessageBreak
       version of dvipdfmx in use is unknown
       \MessageBreak (v.#1 or later is required)}%
-  \else\ifnum\bxpv@cache@@dvipdfmxver<#1
+  \else
     \bxpv@fail
      {#2, because the\MessageBreak
       version of dvipdfmx in use (v.\bxpv@cache@@dvipdfmxver) is too old
       \MessageBreak (v.#1 or later is required)}%
-  \else
-    \PackageInfo\bxpv@pkgname
-     {dvipdfmx version is \bxpv@cache@@dvipdfmxver\@gobble}%
-    \bxpv@oktrue
   \fi\fi
 }
 
