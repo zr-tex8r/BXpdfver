@@ -12,10 +12,6 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{bxpdfver}[2024/07/24 v0.7]
 \def\bxpv@pkgname{bxpdfver}
-
-%% preparations
-\RequirePackage{ifthen}[]% for \newboolean
-\newif\ifbxpv@ok
 \providecommand\bxDebug[1]{}
 
 %--------------------------------------- package options
@@ -124,12 +120,22 @@
   \fi
 \fi
 
-%--------------------------------------- helpers
+%--------------------------------------- general
+
+%% packages
+\RequirePackage{ifthen}[]% for \newboolean
+
+%% variables
+\newif\ifbxpv@ok
 
 %% unique tokens
 \def\bxpv@end{\bxpv@end@}
 \def\bxpv@mt{\bxpv@mt@}
 \let\bxpv@mk\noindent
+
+%% \ifbxpv@read@file@ok
+% Whether or not the last \bxpv@read@file succeeded.
+\newif\ifbxpv@read@file@ok
 
 %% \bxpv@csletcs
 \def\bxpv@csletcs#1#2{%
@@ -187,9 +193,26 @@
 \bxpv@csletcs{ifbxpv@defined}{%
     if\ifx\ifdefined\@undefined false\else defined\fi}
 
+%% \bxpv@begin@document@hook
+% The begin-document hook.
+\@onlypreamble\bxpv@begin@document@hook
+\let\bxpv@begin@document@hook\@empty
+\AtBeginDocument{\bxpv@begin@document@hook}
+
+%--------------------------------------- environment check
+
 %% \ifbxpv@old@hook@system
 \newif\ifbxpv@old@hook@system
 \@ifl@t@r\fmtversion{2020/10/01}{}{\bxpv@old@hook@systemtrue}
+
+%% check for new PDF management
+\if t\bxpv@ignore@pdfmanagement\else
+  \ifx\IfPDFManagementActiveTF\@undefined\else
+    \IfPDFManagementActiveTF{%
+      \let\bxpv@drv@type=m%
+    }{}
+  \fi
+\fi
 
 %--------------------------------------- internal dispatchers
 
@@ -234,23 +257,9 @@
 \@onlypreamble\bxpv@cancel@obj@compress
 \let\bxpv@cancel@obj@compress\relax
 
-%% \bxpv@begin@document@hook
-% The begin-document hook.
-\@onlypreamble\bxpv@begin@document@hook
-\let\bxpv@begin@document@hook\@empty
-\AtBeginDocument{\bxpv@begin@document@hook}
 \g@addto@macro\bxpv@begin@document@hook{%
   \bxpv@check@hyperref % must come first
 }
-
-%% check for new PDF management
-\if t\bxpv@ignore@pdfmanagement\else
-  \ifx\IfPDFManagementActiveTF\@undefined\else
-    \IfPDFManagementActiveTF{%
-      \global\let\bxpv@drv@type=m%
-    }{}
-  \fi
-\fi
 
 %% Redefine internal dispatchers.
 \ifx 0\bxpv@drv@type\else               %--------
@@ -683,7 +692,7 @@
 \fi
 
 %% variables
-\let\bxpv@dvipdfmx@known@min\relax
+\let\bxpv@dvipdfmx@known@min\relax % minimum known dviodfmx version
 \let\bxpv@C@value\relax
 
 %% \bxpv@C@bits
@@ -765,7 +774,7 @@
   % C option value
   \ifx\bxpv@C@bits\@empty\else
     % When C option is used, its value is automatically OR'ed with
-    % the current value, so we need read the config for that.
+    % the current value, so we need not read the config for that.
     \def\bxpv@C@value{0}%
     \def\do##1{%
       \bxpv@rc@bitset{\bxpv@C@value}{##1}%
@@ -792,18 +801,27 @@
 }
 
 %% \bxpv@get@dvipdfmx@known@min
+% Gathers the information and sets \bxpv@dvipdfmx@known@min,
+% without actually spawning extractbb.
+% (Called in the begin-document hook.)
 \@onlypreamble\bxpv@get@dvipdfmx@known@min
 \def\bxpv@get@dvipdfmx@known@min{%
+  % initially no information
   \def\bxpv@dvipdfmx@known@min{0}%
+  % l3backend-dvipdfmx of revision 2022-04-10 or later requires
+  % dvipdfmx of version 20201111 or later.
   \def\bxpv@tmpa{def}%
   \let\bxpv@tmpb\@gobbletwo
   \@ifl@aded\bxpv@tmpa{l3backend-dvipdfmx}{%
     \def\bxpv@tmpb{\@ifl@ter\bxpv@tmpa{l3backend-dvipdfmx}}%
   }{}%
+  % Just in case....
   \@ifl@aded\bxpv@tmpa{l3backend-dvips}{%
     \def\bxpv@tmpb{\@ifl@ter\bxpv@tmpa{l3backend-dvips}}%
   }{}%
   \bxpv@tmpb{2022/04/10}{%
+    % Now the version is known to be 20201111 or later.
+    % This information can save much need for spawning extractbb.
     \def\bxpv@dvipdfmx@known@min{20201111}%
   }{}%
   \bxDebug{dvipdfmx-known-min:\bxpv@dvipdfmx@known@min}%
@@ -997,10 +1015,6 @@
 \let\bxpv@rf@parse\relax    % line parser
 \let\bxpv@rf@line\relax     % line content
 \let\bxpv@rf@cont\relax     % continue to read?
-
-%% \ifbxpv@read@file@ok
-% Whether or not the last \bxpv@read@file succeeded.
-\newboolean{bxpv@read@file@ok}
 
 %% \bxpv@read@file{<file-name>}{<line-parser-code>}
 % Reads from a text file. The line parser takes as #1 the
