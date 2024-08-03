@@ -43,11 +43,14 @@ bxpdfver パッケージ
   * `objcompress`（既定）： オブジェクトストリームの使用を抑止しない。
   * ドライバオプション： 以下の通り。なお、後述の「ドライバ指定」の
     節も参照されたい。
-      + PDF 出力のエンジンの場合は、既定で適切なドライバが選択される
+      + LaTeX の新 PDF マネジメントが有効化されている場合は、自動的に
+        “latex-pdf”モードに切り替わる。ドライバオプションは不要である。
+      + PDF 出力のエンジンの場合は、自動的に適切なドライバが選択される
         のでドライバオプションは不要である。
       + `dvipdfmx`： dvipdfmx 用のドライバを指定する。
       + `nodvidriver`／`disabled`： 全ての機能を無効化する。  
         ※この場合 `lenient+` が既定になる。
+  + `ignorepdfmanagement`： “latex-pdf”モードへの切替を抑止する。
   * `lenient`： サポートしない機能に対するエラーを警告に格下げする。
   * `lenient+`： サポートしない機能に対するエラーを完全に抑止する。
   * `nolenient`（既定）： `lenient(+)` の否定。  
@@ -79,11 +82,11 @@ bxpdfver パッケージ
 ### ドライバ指定に関する補足
 
            \ Drivers (engines)     pdfTeX     dvipdfmx
-    Features                       / LuaTeX   / XeTeX    others
-    ---------------------------    ---------  ---------  ------
-    \setpdfversion                 Yes        Yes        No
-    \suppresspdfcompression        Yes        Maybe(*2)  No
-    \suppresspdfobjcompression     Yes        Maybe(*2)  No
+    Features                       / LuaTeX   / XeTeX    latex-pdf
+    ---------------------------    ---------  ---------  ---------
+    \setpdfversion                 Yes        Yes        Yes
+    \suppresspdfcompression        Yes        Maybe(*2)  Yes(*4)
+    \suppresspdfobjcompression     Yes        Maybe(*2)  Yes(*4)
     \setpdfdecimaldigits           Yes        Maybe(*2)  No
     \preservepdfdestinations       No-op(*1)  Maybe(*2)  No
     \setpdfpkresolution            Yes        Maybe(*3)  No
@@ -92,6 +95,9 @@ bxpdfver パッケージ
     `\preservepdfdestinations` は常に有効になっていると見なせる。
  2. (x)dvipdfmx のバージョンが 20160307 以上である必要がある。
  3. (x)dvipdfmx のバージョンが 20211016 以上である必要がある。
+ 4. `\suppresspdfcompression` と `\suppresspdfobjcompression` については
+    一方を実行すると他方も自動的に有効になる。l3pdf モジュールで片方のみ
+    を有効化することはサポートされないからである。
 
 dvipdfmx のバージョン判定について：
 
@@ -119,6 +125,9 @@ dvipdfmx のバージョン判定について：
 更新履歴
 --------
 
+  * Version 0.8  ‹2024/08/03›
+      - カーネルの新 PDF マネジメントが有効な場合にも一部の機能が使える
+        ようにする（“latex-pdf”モード）。
   * Version 0.7  ‹2024/07/24›
       - `\setpdfpkresolution` を（正式に）サポート。（dvipdfmx/XeTeX
         でも使用可能になった。）

@@ -44,11 +44,16 @@ The available options are:
   * `noobjcompress`: Suppresses use of object streams.
   * `objcompress` (default): Does not suppress use of object streams.
   * Driver options: As below:
+      + When the new PDF management of LaTeX is activated, the package
+        will automatically switch to “latex-pdf” mode. You need not
+        give driver options.
       + When using a PDF-output engine, you need not give driver options
         since the appropriate one is auto-detected.
       + `dvipdfmx`: Uses dvipdfmx driver.
       + `nodvidriver`/`disabled`: Disables all functions of the package.  
         NB. This option sets `lenient+` by default.
+  * `ignorepdfmanagement`: Avoids switching to “latex-pdf” mode, even
+    when the new PDF management of LaTeX is activated.
   * `lenient`: Turns the errors for unsupported features into warnings.
   * `lenient+`: Suppreseses the errors for unsupported features.
   * `nolenient`: Negation of `lenient(+)`.
@@ -78,11 +83,11 @@ when it is already suppressed by other means.
 ### NOTE ON DRIVERS
 
            \ Drivers (engines)     pdfTeX     dvipdfmx
-    Features                       / LuaTeX   / XeTeX    others
-    ---------------------------    ---------  ---------  ------
-    \setpdfversion                 Yes        Yes        No
-    \suppresspdfcompression        Yes        Maybe(*2)  No
-    \suppresspdfobjcompression     Yes        Maybe(*2)  No
+    Features                       / LuaTeX   / XeTeX    latex-pdf
+    ---------------------------    ---------  ---------  ---------
+    \setpdfversion                 Yes        Yes        Yes
+    \suppresspdfcompression        Yes        Maybe(*2)  Yes(*4)
+    \suppresspdfobjcompression     Yes        Maybe(*2)  Yes(*4)
     \setpdfdecimaldigits           Yes        Maybe(*2)  No
     \preservepdfdestinations       No-op(*1)  Maybe(*2)  No
     \setpdfpkresolution            Yes        Maybe(*3)  No
@@ -92,8 +97,11 @@ when it is already suppressed by other means.
     always in effect.
  2. These features are available only when the version of (x)dvipdfmx
     is 20160307 or later.
- 2. These features are available only when the version of (x)dvipdfmx
+ 3. These features are available only when the version of (x)dvipdfmx
     is 20211016 or later.
+ 4. As for '\suppresspdfcompression' and '\suppresspdfobjcompression',
+    when one of them is executed, the other will be activated. It is
+    because l3pdf module does not support activating only one of them.
 
 On the detection of dvipdfmx version:
 
@@ -119,6 +127,9 @@ More notices:
 REVISION HISTORY
 ----------------
 
+  * Version 0.8  ‹2024/08/03›
+      - Support some features even when the new PDF management of the
+        LaTeX kernel is activated (“latex-pdf” mode).
   * Version 0.7  ‹2024/07/24›
       - Support (officialy) `\setpdfpkresolution`.
   * Version 0.6  ‹2022/04/28›
