@@ -205,12 +205,36 @@
 \newif\ifbxpv@old@hook@system
 \@ifl@t@r\fmtversion{2020/10/01}{}{\bxpv@old@hook@systemtrue}
 
+%% \ifbxpv@pdfmanagement@ok
+% Whether this package is supporting the LaTeX PDF management
+% of the current kernel.
+% (If the PDF management is active but this switch is off,
+% then this package will switch to no-op mode.)
+\newif\ifbxpv@pdfmanagement@ok
+
 %% check for new PDF management
 \if t\bxpv@ignore@pdfmanagement\else
   \ifx\IfPDFManagementActiveTF\@undefined\else
     \IfPDFManagementActiveTF{%
       \let\bxpv@drv@type=m%
+      \def\bxpv@drv@name{latex-pdf}%
+      \@ifl@t@r\fmtversion{2022/06/01}{%
+        \bxpv@pdfmanagement@oktrue
+      }{}
     }{}
+  \fi
+\fi
+\ifx m\bxpv@drv@type
+  \ifbxpv@pdfmanagement@ok
+    \bxpv@warn
+     {New PDF management is active.\MessageBreak
+      The driver is set to '\bxpv@drv@name'}%
+    % Here \ExplSyntaxOn should be available.
+  \else
+    \bxpv@warn
+     {New PDF management is active, but\MessageBreak
+      the kernel is too old (before 2022/06/01).\MessageBreak
+      Thus this package will not work}%
   \fi
 \fi
 
@@ -283,9 +307,31 @@
 
 %% switch
 \if m\bxpv@drv@type
-  %% when in new PDF management
-  \bxpv@warn
-   {New PDF management is active}%
+  \ifbxpv@pdfmanagement@ok
+    % Here all l3pdf function is assumed to be available.
+    \gdef\bxpv@check@version{\bxpv@oktrue}
+    \ExplSyntaxOn %!!!!!!
+      \tl_new:N \g__bxpv_org_version
+      \exp_args:NNe \tl_gset:Nn \g__bxpv_org_version { \pdf_version: }
+      \cs_gset:Npn \bxpv@set@version
+        {
+          \token_if_eq_meaning:NNTF \bxpdfverMinorVersion \relax
+            { \pdf_version_gset:n { \g__bxpv_org_version } }
+            {
+              \pdf_version_gset:n
+                {
+                  \int_use:N \bxpdfverMajorVersion
+                  . \int_use:N \bxpdfverMinorVersion
+                }
+            }
+        }
+      % \pdf_uncompress: does both.
+      \cs_gset:Npn \bxpv@suppress@compress
+        { \pdf_uncompress: }
+      \cs_gset:Npn \bxpv@suppress@obj@compress
+        { \pdf_uncompress: }
+    \ExplSyntaxOff %!!!!!!
+  \fi
 \else\ifnum\bxpv@pdfoutput>\z@
   %% when in PDF mode
   \global\let\bxpv@drv@type=p
