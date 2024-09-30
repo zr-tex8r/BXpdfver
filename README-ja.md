@@ -91,7 +91,7 @@ bxpdfver パッケージ
     \preservepdfdestinations       No-op(*1)  Maybe(*2)  No
     \setpdfpkresolution            Yes        Maybe(*3)  No
 
- 1. pdfTeX／LuaTeX では PDF 目的地の名前が短縮されるることはない。つまり
+ 1. pdfTeX／LuaTeX では PDF 目的地の名前が短縮されることはない。つまり
     `\preservepdfdestinations` は常に有効になっていると見なせる。
  2. (x)dvipdfmx のバージョンが 20160307 以上である必要がある。
  3. (x)dvipdfmx のバージョンが 20211016 以上である必要がある。
