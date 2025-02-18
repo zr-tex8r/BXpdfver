@@ -936,10 +936,19 @@
   \ifnum\bxpv@cache@@newtex>\z@
     \def\bxpv@tmpc{This is extractbb Version }%
     \bxpv@detokenize\bxpv@tmpc
+    \def\bxpv@tmpb{extractbb.lua v}%
+    \bxpv@detokenize\bxpv@tmpb
     \bxpv@read@file{"|extractbb --version"}{%
       \bxpv@split@at{\bxpv@tmpc}{##1}%
       \ifx\bxpv@pre\relax\else
         \global\let\bxpv@gtmpa\bxpv@post
+      \fi
+      \bxpv@split@at{\bxpv@tmpb}{##1}%
+      \ifx\bxpv@pre\relax\else
+        % The scratch extractbb is used,
+        % so the dvipdfmx version cannot be guessed.
+        % In this case, we'll drop the version check.
+        \gdef\bxpv@gtmpa{88888888}% assume it's new
       \fi
     }%
   \fi
