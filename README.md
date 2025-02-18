@@ -127,6 +127,9 @@ More notices:
 REVISION HISTORY
 ----------------
 
+  * Version 0.8a ‹2025/02/18›
+      - Give up checking dvipdfmx version when the scratch extractbb
+        is used.
   * Version 0.8  ‹2024/08/03›
       - Support some features even when the new PDF management of the
         LaTeX kernel is activated (“latex-pdf” mode).
