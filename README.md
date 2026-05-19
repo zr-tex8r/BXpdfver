@@ -127,6 +127,9 @@ More notices:
 REVISION HISTORY
 ----------------
 
+  * Version 0.8b ‹2026/05/19›
+      - Bug fix.
+      - Add driver option `dvisvgm`.
   * Version 0.8a ‹2025/02/18›
       - Give up checking dvipdfmx version when the scratch extractbb
         is used.
