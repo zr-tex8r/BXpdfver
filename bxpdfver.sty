@@ -769,7 +769,7 @@
     \ifx\bxpdfverMinorVersion\relax\else
       \bxpv@put@special{pdf:minorversion \the\bxpdfverMinorVersion}%
     \fi
-    \ifx\bxpdfverMinorVersion\relax\else
+    \ifx\bxpdfverMajorVersion\relax\else
       \bxpv@at@least@dvipdfmx@version{20180217}%
       \ifbxpv@ok
         \bxpv@put@special{pdf:majorversion \the\bxpdfverMajorVersion}%
