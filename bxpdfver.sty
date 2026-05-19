@@ -18,7 +18,7 @@
 
 %% variables
 \let\bxpv@drv@type\relax  % driver type
-   % p=pdfmode,d=dvipdfmx,0=disabled,x=unsupported
+   % p=pdfmode,d=dvipdfmx,m=latex-pdf,0=disabled,x=unsupported
 \let\bxpv@drv@name\relax  % driver name
 \let\bxpv@version\relax   % version value (eg. 1.4)
 \let\bxpv@compress=t      % use compression?
@@ -149,6 +149,11 @@
 \def\bxpv@detokenize@a#1>#2\bxpv@end#3{%
   \def#3{#2}%
 }
+
+%% something for texdef
+\edef\bxpv@tmpa{\jobname}
+\def\bxpv@tmpb{texdeftmp}\bxpv@detokenize\bxpv@tmpb
+\ifx\bxpv@tmpa\bxpv@tmpb \chardef\bxpv@infolevel=1 \fi
 
 %% \bxpv@info{<message>}
 % Issues an info message.
