@@ -170,21 +170,37 @@
 % Issues a warning.
 \@onlypreamble\bxpv@warn
 \def\bxpv@warn#1{%
-  \ifcase\bxpv@infolevel % info when lenient+
+  \ifcase\bxpv@infolevel % lenient+ -> info
     \PackageInfo\bxpv@pkgname{#1\@gobble}%
-  \else % warn otherwise
+  \else % -> warn
     \PackageWarningNoLine\bxpv@pkgname{#1}%
   \fi
 }
+
+%% \bxpv@note{<message>}
+% Issues a note.
+\@onlypreamble\bxpv@note
+\ifx\PackageNote\@undefined
+  \let\bxpv@note\bxpv@warn
+\else
+  \def\bxpv@note#1{%
+    \ifcase\bxpv@infolevel % lenient+ -> info
+      \PackageInfo\bxpv@pkgname{#1\@gobble}%
+    \else % -> note
+      \PackageNote\bxpv@pkgname{#1\@gobble}%
+    \fi
+  }
+\fi
 
 %% \bxpv@fail{<message>}
 % Issues an error or a warning.
 \@onlypreamble\bxpv@fail
 \def\bxpv@fail#1{%
-  \ifcase\bxpv@infolevel % silenced
-  \or % lenient
+  \ifcase\bxpv@infolevel % lenient+ -> info
+    \PackageInfo\bxpv@pkgname{#1\@gobble}%
+  \or % lenient -> warn
     \PackageWarningNoLine\bxpv@pkgname{#1}%
-  \or % strict
+  \or % nolenient -> error
     \PackageError\bxpv@pkgname{#1}{\@ehc}%
   \fi
 }
@@ -235,7 +251,7 @@
 \fi
 \ifx m\bxpv@drv@type
   \ifbxpv@pdfmanagement@ok
-    \bxpv@warn
+    \bxpv@note
      {New PDF management is active.\MessageBreak
       The driver is set to '\bxpv@drv@name'}%
     % Here \ExplSyntaxOn should be available.
@@ -454,11 +470,11 @@
   }
 \fi\fi
 \if x\bxpv@drv@type % 'bad' driver
-  \bxpv@warn
-   {Unsupported driver '\bxpv@drv@name'}%
+  \bxpv@note
+   {No features supported on driver '\bxpv@drv@name'}%
 \else\if X\bxpv@drv@type % strange engine
-  \bxpv@warn
-   {Unsupported engine}%
+  \bxpv@note
+   {No features supported on this engine}%
 \else\if d\bxpv@drv@type % 'dvipdfmx'
   % All the real settings are done in the begin-document hook,
   % so the dispatchers themselves will do nothing (if available).
