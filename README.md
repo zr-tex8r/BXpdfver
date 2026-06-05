@@ -127,6 +127,8 @@ More notices:
 REVISION HISTORY
 ----------------
 
+  * Version 0.8c ‹2026/06/06›
+      - Improve error messages.
   * Version 0.8b ‹2026/05/19›
       - Bug fix.
       - Add driver option `dvisvgm`.
